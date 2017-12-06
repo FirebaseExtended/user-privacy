@@ -1,0 +1,35 @@
+[debug] [2017-12-06T23:23:46.699Z] ----------------------------------------------------------------------
+[debug] [2017-12-06T23:23:46.700Z] Command:       /usr/local/bin/node /usr/local/bin/firebase serve
+[debug] [2017-12-06T23:23:46.700Z] CLI Version:   3.15.3
+[debug] [2017-12-06T23:23:46.700Z] Platform:      darwin
+[debug] [2017-12-06T23:23:46.700Z] Node Version:  v8.9.1
+[debug] [2017-12-06T23:23:46.701Z] Time:          Wed Dec 06 2017 15:23:46 GMT-0800 (PST)
+[debug] [2017-12-06T23:23:46.701Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2017-12-06T23:23:46.710Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2017-12-06T23:23:46.710Z] > authorizing via signed-in user
+[debug] [2017-12-06T23:23:46.711Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/wipeout-takeout  
+ Wed Dec 06 2017 15:23:46 GMT-0800 (PST)
+[debug] [2017-12-06T23:23:47.381Z] <<< HTTP RESPONSE 200
+[debug] [2017-12-06T23:23:47.382Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/database/wipeout-takeout/tokens  
+ Wed Dec 06 2017 15:23:47 GMT-0800 (PST)
+[debug] [2017-12-06T23:23:47.835Z] <<< HTTP RESPONSE 200
+[info] 
+[info] === Serving from '/Users/rachelmyers/firebase/wipeout-takeout'...
+[info] 
+[debug] [2017-12-06T23:23:47.840Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/wipeout-takeout  
+ Wed Dec 06 2017 15:23:47 GMT-0800 (PST)
+[debug] [2017-12-06T23:23:48.291Z] <<< HTTP RESPONSE 200
+[debug] [2017-12-06T23:23:48.292Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/216681170796/clients/_:getWebAppConfig  
+ Wed Dec 06 2017 15:23:48 GMT-0800 (PST)
+[debug] [2017-12-06T23:23:48.654Z] <<< HTTP RESPONSE 200
+[debug] [2017-12-06T23:23:48.708Z] TypeError: Cannot read property 'public' of undefined
+    at Server.<anonymous> (/usr/local/lib/node_modules/firebase-tools/lib/serve/hosting.js:34:18)
+    at Object.onceWrapper (events.js:313:30)
+    at emitNone (events.js:106:13)
+    at Server.emit (events.js:208:7)
+    at emitListeningNT (net.js:1378:10)
+    at _combinedTickCallback (internal/process/next_tick.js:135:11)
+    at process._tickDomainCallback (internal/process/next_tick.js:218:9)
+[error] 
+[error] Error: An unexpected error has occurred.
