@@ -1,0 +1,41 @@
+declare const _default: {
+    codes: {
+        AVAILABLE_IN_WINDOW: string;
+        AVAILABLE_IN_SW: string;
+        SHOULD_BE_INHERITED: string;
+        BAD_SENDER_ID: string;
+        INCORRECT_GCM_SENDER_ID: string;
+        PERMISSION_DEFAULT: string;
+        PERMISSION_BLOCKED: string;
+        UNSUPPORTED_BROWSER: string;
+        NOTIFICATIONS_BLOCKED: string;
+        FAILED_DEFAULT_REGISTRATION: string;
+        SW_REGISTRATION_EXPECTED: string;
+        GET_SUBSCRIPTION_FAILED: string;
+        INVALID_SAVED_TOKEN: string;
+        SW_REG_REDUNDANT: string;
+        TOKEN_SUBSCRIBE_FAILED: string;
+        TOKEN_SUBSCRIBE_NO_TOKEN: string;
+        TOKEN_SUBSCRIBE_NO_PUSH_SET: string;
+        USE_SW_BEFORE_GET_TOKEN: string;
+        INVALID_DELETE_TOKEN: string;
+        DELETE_TOKEN_NOT_FOUND: string;
+        DELETE_SCOPE_NOT_FOUND: string;
+        BG_HANDLER_FUNCTION_EXPECTED: string;
+        NO_WINDOW_CLIENT_TO_MSG: string;
+        UNABLE_TO_RESUBSCRIBE: string;
+        NO_FCM_TOKEN_FOR_RESUBSCRIBE: string;
+        FAILED_TO_DELETE_TOKEN: string;
+        NO_SW_IN_REG: string;
+        BAD_SCOPE: string;
+        BAD_VAPID_KEY: string;
+        BAD_SUBSCRIPTION: string;
+        BAD_TOKEN: string;
+        BAD_PUSH_SET: string;
+        FAILED_DELETE_VAPID_KEY: string;
+    };
+    map: {
+        [x: string]: string;
+    };
+};
+export default _default;
