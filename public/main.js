@@ -113,7 +113,7 @@ firebase.auth().onAuthStateChanged(function(user) {
 /**
  * Deletes the user's account.
  */
-var deleteAccount = function() {
+var databaseDeleteAccount = function() {
   firebase.auth().currentUser.delete().catch(function(error) {
     if (error.code == 'auth/requires-recent-login') {
       // The user's credential is too old. She needs to sign in again.
@@ -126,6 +126,18 @@ var deleteAccount = function() {
       });
     }
   });
+};
+
+var databaseTakeout = function(firebaseStorage) {
+  var xhr = new XMLHttpRequest();
+  var body = firebase.auth().currentUser;
+  xhr.open('POST', '/database-takeout', true);
+  xhr.send(
+    JSON.stringify(body),
+    function(er, res, body) {
+      console.log(er, res, body);
+    }
+  );
 };
 
 /**
@@ -141,12 +153,12 @@ var initApp = function() {
   );
   document.getElementById('delete-account').addEventListener(
     'click', function() {
-      deleteAccount();
+      databaseDeleteAccount();
     }
   );
   document.getElementById('takeout').addEventListener(
     'click', function() {
-      userIntiatedTakeout();
+      databaseTakeout();
     }
   );
 };
