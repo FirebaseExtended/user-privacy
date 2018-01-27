@@ -51,18 +51,17 @@ var Service = require('./service.js');
 // jscs:enable maximumLineLength
 function Operation(parent, name) {
   var methods = {
-
     /**
      * Deletes an operation.
      */
     delete: {
       protoOpts: {
         service: 'Operations',
-        method: 'deleteOperation'
+        method: 'deleteOperation',
       },
       reqOpts: {
-        name: name
-      }
+        name: name,
+      },
     },
 
     /**
@@ -81,18 +80,18 @@ function Operation(parent, name) {
     getMetadata: {
       protoOpts: {
         service: 'Operations',
-        method: 'getOperation'
+        method: 'getOperation',
       },
       reqOpts: {
-        name: name
-      }
-    }
+        name: name,
+      },
+    },
   };
 
   var config = {
     parent: parent,
     id: name,
-    methods: methods
+    methods: methods,
   };
 
   common.Operation.call(this, config);
@@ -112,11 +111,11 @@ modelo.inherits(Operation, ServiceObject, common.Operation);
 Operation.prototype.cancel = function(callback) {
   var protoOpts = {
     service: 'Operations',
-    method: 'cancelOperation'
+    method: 'cancelOperation',
   };
 
   var reqOpts = {
-    name: this.id
+    name: this.id,
   };
 
   this.request(protoOpts, reqOpts, callback || common.util.noop);

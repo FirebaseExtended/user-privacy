@@ -1,71 +1,284 @@
-const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const functions = require("firebase-functions");
+
 admin.initializeApp(functions.config().firebase);
+
 const db = admin.database();
-const fs = require('fs');
+const firestore = admin.firestore();
+const storage = admin.storage();
 
-const bucketName = "wipeout-takeout.appspot.com"
+const bucketName = "wipeout-takeout.appspot.com";
 
-// RTDB Wipeout
+// Wipeout
 //
-// Specify paths to all stored PII.
-//
-// All instances of `UID` will be replaced by the uid of the user at runtime.
-const databaseWipeoutPaths = [
-  "/users/UID",
-  "/admins/UID"
-];
-
-exports.databaseWipeout = functions.auth.user().onDelete(event => {
+// The wipeout function kicks off functions to start removing personal data from
+// the RealTime Database, Storage, and Firestore. It waits for all three
+// functions to complete, and then returns a success message. Triggered by a
+// user deleting their account.
+exports.wipeout = functions.auth.user().onDelete(event => {
+  var uid = event.data.uid;
   var deletePromises = [];
-  for (let i = 0; i < databaseWipeoutPaths.length; i++) {
-    var path = databaseWipeoutPaths[i].replace(/UID/g, event.data.uid);
-    deletePromises.push(db.ref(path).remove());
-  }
-  return Promise.all(deletePromises).then(() => databaseWipeoutPaths);
+
+  deletePromises.push(wipeoutFromDatabase(uid, deletePromises));
+  deletePromises.push(wipeoutFromStorage(uid, deletePromises));
+  deletePromises.push(wipeoutFromFirestore(uid, deletePromises));
+
+  return Promise.all(deletePromises).then(() =>
+    console.log(`Wipeout success! There's no trace of user #${uid}.`)
+  );
 });
 
-
-// RTDB Takeout
+// Delete data from all specified paths from the Realtime Database. To add or
+// remove a path, edit the `database[wipeout]` array in user_privacy_paths.
 //
-// Specify database paths to all user content to be copied for Takeout.
+// This function is called by the top-level `wipeout` function.
 //
-// All instances of `UID` will be replaced by the user's UID at runtime.
-const databaseTakeoutPaths = [
-  "/users/UID/name",
-  "/users/UID/email",
-  "/users/UID/photo"
-];
+// Returns a list of Promises
+const wipeoutFromDatabase = (uid) => {
+  const databaseWipeoutPaths = user_privacy_paths.database.wipeout;
+  var databasePromises = [];
 
-exports.databaseTakeout = functions.https.onRequest((req, res) => {
-  var takeoutPromises = [];
+  for (let i = 0; i < databaseWipeoutPaths.length; i++) {
+    var path = databaseWipeoutPaths[i].replace(/UID/g, uid);
+    databasePromises.push(db.ref(path).remove());
+  }
+  return databasePromises;
+};
+
+// Wipeout all specified files from the Realtime Database. To add or remove a
+// path, edit the `storage[wipeout]` array in user_privacy_paths.
+//
+// This function is called by the top-level `wipeout` function.
+//
+// Returns a list of Promises
+const wipeoutFromStorage = (uid) => {
+  const storageWipeoutPaths = user_privacy_paths.storage.wipeout;
+  var storagePromises = []
+
+  for (let i = 0; i < storageWipeoutPaths.length; i++) {
+    var bucketName = storageWipeoutPaths[i][0].replace(/UID/g, uid);
+    var path = storageWipeoutPaths[i][1].replace(/UID/g, uid);
+    var bucket = storage.bucket(bucketName);
+    var file = bucket.file(path);
+
+    storagePromises.push(file.delete())
+  }
+  return storagePromises;
+};
+
+// Wipeout all specified paths from the Firestore Database. To add or remove a
+// path, edit the `firestore[wipeout]` array in user_privacy_paths.
+//
+// This function is called by the top-level `wipeout` function.
+//
+// Returns a list of Promises
+const wipeoutFromFirestore = (uid) => {
+  const firestoreWipeoutPaths = user_privacy_paths.firestore.wipeout;
+  var firestorePromises = [];
+
+  for (let i = 0; i < firestoreWipeoutPaths.length; i++) {
+    var entry = firestoreWipeoutPaths[i]
+    var entryCollection = entry["collection"];
+    var entryDoc = entry["doc"];
+
+    if ("field" in entry) {
+      var refToDelete = firestore.collection(entryCollection).doc(entryDoc);
+      var entryField = entry["field"];
+      var FieldValue = require("firebase-admin").firestore.FieldValue;
+      firestorePromises.push(
+        refToDelete.update({ entryField: FieldValue.delete() })
+      );
+    } else {
+      firestorePromises.push(
+        firestore.collection(entry["collection"]).doc(entry["doc"]).delete()
+      );
+    }
+  }
+  return firestorePromises;
+};
+
+// Takeout
+//
+// The `takeout` function kicks off functions to start reading and copying data
+// from the RealTime Database, Storage, and Firestore. It waits for all three
+// functions to complete, and then returns a success message and uploads a
+// JSON file of the takeout data to storage.
+//
+// Because the resulting takeout file could contain personal information, it's
+// important to use Firebase Security Rules to make these files readable only by
+// the user with the same uid.
+//
+// Triggered by an http function, which could be wired up to a button or link.
+exports.takeout = functions.https.onRequest((req, res) => {
   var takeout = {};
   var body = JSON.parse(req.body);
   var uid = body.uid;
 
+  var databasePromise = databaseTakeout(uid).then(function(databaseData) {
+    takeout["database"] = databaseData;
+  });
+  var firestorePromise = firestoreTakeout(uid).then(function(firestoreData) {
+    takeout["firestore"] = firestoreData;
+  });
+  var storagePromise = storageTakeout(uid).then(function(storageReferences) {
+    takeout["storage"] = storageReferences
+  });
+
+  return Promise.all([databasePromise, firestorePromise, storagePromise]).then(function() {
+    console.log(`Success! Completed takeout for user ${uid}:`, takeout)
+    return uploadToStorage(uid, takeout)
+  }).then(() => res.json("{takeoutComplete: true}"));
+});
+
+// Read and copy the specified paths from the RealTime Database. To add or
+// remove a path, edit the `database[takeout]` array in user_privacy_paths.
+//
+// This function is called by the top-level `takeout` function.
+//
+// Returns a Promise.
+const databaseTakeout = (uid) => {
+  const databaseTakeoutPaths = user_privacy_paths.database.takeout;
+  var takeoutPromises = [];
+  var databaseTakeout = {};
+
   for (let i = 0; i < databaseTakeoutPaths.length; i++) {
     var path = databaseTakeoutPaths[i].replace(/UID/g, uid);
     takeoutPromises.push(db.ref(path).once("value").then(function(snapshot) {
-      takeout[snapshot.key] = snapshot.val();
+      databaseTakeout[snapshot.key] = snapshot.val();
     }));
-  }
-  return Promise.all(takeoutPromises).then(function() {
-    return uploadToStorage(uid, takeout);
-  }).then(() => res.json({uploadComplete: true}));
-});
+  };
 
+  return new Promise(function(resolve, reject) {
+    resolve(databaseTakeout)
+  });
+};
+
+// Read and copy the specified paths from the Firestore Database. To add or
+// remove a path, edit the `firestore[takeout]` array in user_privacy_paths.
+//
+// This function is called by the top-level `takeout` function.
+//
+// Returns a Promise.
+const firestoreTakeout = (uid) => {
+  const firestoreTakeoutPaths = user_privacy_paths.firestore.takeout;
+  var takeoutPromises = [];
+  var firestoreTakeout = {};
+
+  for (let i = 0; i < firestoreTakeoutPaths.length; i++) {
+    var entry = firestoreWipeoutPaths[i]
+    var entryCollection = entry["collection"];
+    var entryDoc =  entry["doc"].replace(/UID/g, uid);
+    var takeoutRef = firestore.collection(entryCollection).doc(entryDoc);
+
+    // Confirm with Sam that Firestore reads aren't promisified
+    takeoutRef.get().then(doc => {
+      if (doc.exists) {
+        firestoreTakeout[`${entryCollection}/${entryDoc}`] = doc.data();
+      }
+    }).catch(err => {
+      console.log(err)
+    });
+  }
+  return new Promise(function(resolve, reject) {
+    resolve(firestoreTakeout);
+  });
+};
+
+// Read and copy the specified paths from the Firebase Storage. To add or
+// remove a path, edit the `database[takeout]` array in user_privacy_paths.
+//
+// In the case of Storage,a read-only copy of the files accessible only to the
+// user is created, and a list of copied files is created and added to the final
+// takeout JSON.
+//
+// An alternative implementation of takeout could copy files to a new
+// bucket accessible to each user. Because creating multiple buckets are a paid
+// feature in Google Cloud Storage, this implementation instead uses a
+// naming convention to distinguish original files that the app uses from
+// the takeout copies that only the user will have acccess to.
+//
+// It's essential in either implementation that the Firebase Security Rules for
+// Storage account for these files and restrict access to the given user.
+//
+// This function is called by the top-level `wipeout` function.
+//
+// Returns a Promise.
+const storageTakeout = (uid) => {
+  const storageTakeoutPaths = user_privacy_paths.storage.takeout;
+  var storageTakeout = {};
+
+  for (let i = 0; i < storageTakeoutPaths.length; i++) {
+    var entry = storageTakeoutPaths[i];
+    var bucketName = entry[0].replace(/UID/g, uid);
+    var path = entry[1].replace(/UID/g, uid);
+    var sourceBucket = storage.bucket(sourceBucketName);
+    var sourceFile = sourceBucket.file(path);
+    var destinationFileName = `${path}-takeout-for-${uid}`
+
+    // Copy the asset that the app uses, to a new location that the security
+    // rules make only accessible to the user.
+    sourceFile.copy(`${path}-takeout-for-${uid}`);
+
+    // Create a list of storage assets to include in the takeout JSON.
+    storageTakeout[`${bucketName}/${path}`] = `${bucketName}/${destinationFileName}`;
+  }
+  console.log("storageTakeout: ", storageTakeout);
+  return new Promise(function(resolve, reject) {
+    resolve(storageTakeout);
+  });
+};
+
+// Upload json to Storage, under a filename of the user's uid. This is the final
+// result of the takeout function, and because this file will contain personal
+// information, it's important to use Firebase Security Rules to make these
+// files readable only by the user with the same uid.
+//
+// Called by the top-level takeout function.
 const uploadToStorage = (uid, takeout) => {
   var json = JSON.stringify(takeout);
-  var bucket = admin.storage().bucket(bucketName);
+  var bucket = storage.bucket(bucketName);
   var file = bucket.file(`${uid}.json`);
 
   return file.save(json);
 };
 
-// exports.storageWipeout
-
-// exports.storageTakeout
-
-// exports.firestoreWipeout
-
-// exports.firestoreTakeout
+// A list of paths that should be removed when a user deletes their account, or
+// read and copied when a user requests a copy of their data.
+//
+// All instances of `UID` will be replaced by the uid of the user at runtime.
+const user_privacy_paths = {
+  "database": {
+    "wipeout": [
+      "/users/UID",
+      "/admins/UID"
+    ],
+    "takeout": [
+      "/users/UID",
+      "/admins/UID"
+    ]
+  },
+  "firestore": {
+    "wipeout": [
+      {"collection": "users", "doc": "UID", "field": "name"},
+      {"collection": "users", "doc": "UID", "field": "phone_num"},
+      {"collection": "admins", "doc": "UID"},
+    ],
+    "takeout": [
+      {"collection": "users", "doc": "UID", "field": "name"},
+      {"collection": "users", "doc": "UID", "field": "phone_num"},
+      {"collection": "admins", "doc": "UID"},
+    ]
+  },
+  "storage": {
+    "wipeout": [
+      ["bucketName", "sample_data_for_UID.json"],
+      ["bucketName", "copy_of_sample_data_for_UID.json"],
+      ["bucketName", "UID"]
+    ],
+    "takeout": [
+      ["bucketName", "sample_data_for_UID.json"],
+      ["bucketName", "copy_of_sample_data_for_UID.json"],
+      ["bucketName", "UID"]
+    ]
+  }
+}

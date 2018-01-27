@@ -13,8 +13,8 @@
     "public": "public",
     "rewrites": [
       {
-        "source": "/database-takeout",
-        "function": "databaseTakeout"
+        "source": "/takeout",
+        "function": "takeout"
       }
     ],
     "ignore": [

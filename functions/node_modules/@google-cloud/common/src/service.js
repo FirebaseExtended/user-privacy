@@ -61,7 +61,7 @@ function Service(config, options) {
     projectId: this.projectId,
     credentials: options.credentials,
     keyFile: options.keyFilename,
-    email: options.email
+    email: options.email,
   });
 
   this.makeAuthenticatedRequest = util.makeAuthenticatedRequestFactory(reqCfg);
@@ -75,7 +75,7 @@ function Service(config, options) {
       request: function(reqOpts) {
         reqOpts.forever = false;
         return reqOpts;
-      }
+      },
     });
   }
 }
@@ -116,9 +116,7 @@ Service.prototype.request_ = function(reqOpts, callback) {
 
   var isAbsoluteUrl = reqOpts.uri.indexOf('http') === 0;
 
-  var uriComponents = [
-    this.baseUrl
-  ];
+  var uriComponents = [this.baseUrl];
 
   if (this.projectIdRequired) {
     uriComponents.push('projects');
@@ -143,7 +141,8 @@ Service.prototype.request_ = function(reqOpts, callback) {
     .replace(/\/:/g, ':');
 
   // Interceptors should be called in the order they were assigned.
-  var combinedInterceptors = [].slice.call(this.globalInterceptors)
+  var combinedInterceptors = [].slice
+    .call(this.globalInterceptors)
     .concat(this.interceptors)
     .concat(arrify(reqOpts.interceptors_));
 
@@ -158,7 +157,7 @@ Service.prototype.request_ = function(reqOpts, callback) {
   var pkg = this.packageJson;
   reqOpts.headers = extend({}, reqOpts.headers, {
     'User-Agent': util.getUserAgentFromPackageJson(pkg),
-    'x-goog-api-client': `gl-node/${process.versions.node} gccl/${pkg.version}`
+    'x-goog-api-client': `gl-node/${process.versions.node} gccl/${pkg.version}`,
   });
 
   return this.makeAuthenticatedRequest(reqOpts, callback);

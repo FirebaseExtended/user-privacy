@@ -82,14 +82,29 @@ var handleSignedInUser = function(user) {
     document.getElementById('photo').style.display = 'none';
   }
 
-  // When a user signs in, save their user info to the database,
-  // To demo wipeout and takeout removing and copying it, respectively.
-  firebase.database().ref('users/' + user.uid).set({
+  // When a user signs in, save their user info to RTDB and Firestore,
+  // to demo wipeout and takeout functionality.
+  var data = {
     name: user.displayName,
     email: user.email,
     photo: user.photoURL,
     color: "blue"
-  });
+  };
+
+  firebase.storage().ref()
+    .child(`sample_data_for_${user.uid}.json`)
+    .putString(`{photo: ${user.photoURL}}`);
+  firebase.database().ref('users/' + user.uid).set(data);
+  firebase.firestore().collection('users').doc(user.uid).set(data);
+  firebase.firestore().collection('admins').doc(user.uid).set(data);
+};
+
+const uploadToStorage = (uid, takeout) => {
+  var json = JSON.stringify(takeout);
+  var bucket = storage.bucket(bucketName);
+  var file = bucket.file(`${uid}.json`);
+
+  return file.save(json);
 };
 
 
@@ -113,31 +128,14 @@ firebase.auth().onAuthStateChanged(function(user) {
 /**
  * Deletes the user's account.
  */
-var databaseDeleteAccount = function() {
-  firebase.auth().currentUser.delete().catch(function(error) {
-    if (error.code == 'auth/requires-recent-login') {
-      // The user's credential is too old. She needs to sign in again.
-      firebase.auth().signOut().then(function() {
-        // The timeout allows the message to be displayed after the UI has
-        // changed to the signed out state.
-        setTimeout(function() {
-          alert('Please sign in again to delete your account.');
-        }, 1);
-      });
-    }
-  });
+var deleteAccount = function(firebaseStorage) {
+  firebase.auth().currentUser.delete();
 };
 
-var databaseTakeout = function(firebaseStorage) {
+var takeout = function() {
   var xhr = new XMLHttpRequest();
-  var body = firebase.auth().currentUser;
-  xhr.open('POST', '/database-takeout', true);
-  xhr.send(
-    JSON.stringify(body),
-    function(er, res, body) {
-      console.log(er, res, body);
-    }
-  );
+  xhr.open('POST', '/takeout', true);
+  xhr.send(JSON.stringify(firebase.auth().currentUser));
 };
 
 /**
@@ -153,12 +151,12 @@ var initApp = function() {
   );
   document.getElementById('delete-account').addEventListener(
     'click', function() {
-      databaseDeleteAccount();
+      deleteAccount();
     }
   );
   document.getElementById('takeout').addEventListener(
     'click', function() {
-      databaseTakeout();
+      takeout();
     }
   );
 };

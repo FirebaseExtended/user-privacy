@@ -32,8 +32,8 @@ var request = require('request').defaults({
   gzip: true,
   forever: true,
   pool: {
-    maxSockets: Infinity
-  }
+    maxSockets: Infinity,
+  },
 });
 var retryRequest = require('retry-request');
 var streamEvents = require('stream-events');
@@ -42,15 +42,18 @@ var uniq = require('array-uniq');
 
 var util = module.exports;
 
-var errorMessage = format([
-  'Sorry, we cannot connect to Cloud Services without a project ID.',
-  'You may specify one with an environment variable named "GCLOUD_PROJECT".',
-  'See {baseUrl}/{path} for a detailed guide on creating an authenticated',
-  'connection.'
-].join(' '), {
-  baseUrl: 'https://googlecloudplatform.github.io/google-cloud-node/#',
-  path: 'docs/guides/authentication'
-});
+var errorMessage = format(
+  [
+    'Sorry, we cannot connect to Cloud Services without a project ID.',
+    'You may specify one with an environment variable named "GCLOUD_PROJECT".',
+    'See {baseUrl}/{path} for a detailed guide on creating an authenticated',
+    'connection.',
+  ].join(' '),
+  {
+    baseUrl: 'https://googlecloudplatform.github.io/google-cloud-node/#',
+    path: 'docs/guides/authentication',
+  }
+);
 
 var missingProjectIdError = new Error(errorMessage);
 
@@ -80,7 +83,9 @@ util.ApiError = createErrorClass('ApiError', function(errorBody) {
 
   try {
     this.errors = JSON.parse(this.response.body).error.errors;
-  } catch (e) {}
+  } catch (e) {
+    this.errors = errorBody.errors;
+  }
 
   var messages = [];
 
@@ -127,7 +132,7 @@ function handleResp(err, resp, body, callback) {
 
   var parsedResp = extend(
     true,
-    { err: err || null },
+    {err: err || null},
     resp && util.parseHttpRespMessage(resp),
     body && util.parseHttpRespBody(body)
   );
@@ -148,7 +153,7 @@ util.handleResp = handleResp;
  */
 function parseHttpRespMessage(httpRespMessage) {
   var parsedHttpRespMessage = {
-    resp: httpRespMessage
+    resp: httpRespMessage,
   };
 
   if (httpRespMessage.statusCode < 200 || httpRespMessage.statusCode > 299) {
@@ -157,7 +162,7 @@ function parseHttpRespMessage(httpRespMessage) {
       errors: [],
       code: httpRespMessage.statusCode,
       message: httpRespMessage.statusMessage,
-      response: httpRespMessage
+      response: httpRespMessage,
     });
   }
 
@@ -178,13 +183,15 @@ util.parseHttpRespMessage = parseHttpRespMessage;
  */
 function parseHttpRespBody(body) {
   var parsedHttpRespBody = {
-    body: body
+    body: body,
   };
 
   if (is.string(body)) {
     try {
       parsedHttpRespBody.body = JSON.parse(body);
-    } catch(err) {}
+    } catch (err) {
+      parsedHttpRespBody.err = new util.ApiError('Cannot parse JSON response');
+    }
   }
 
   if (parsedHttpRespBody.body && parsedHttpRespBody.body.error) {
@@ -225,8 +232,8 @@ function makeWritableStream(dup, options, onComplete) {
   var defaultReqOpts = {
     method: 'POST',
     qs: {
-      uploadType: 'multipart'
-    }
+      uploadType: 'multipart',
+    },
   };
 
   var metadata = options.metadata || {};
@@ -235,13 +242,13 @@ function makeWritableStream(dup, options, onComplete) {
     multipart: [
       {
         'Content-Type': 'application/json',
-        body: JSON.stringify(metadata)
+        body: JSON.stringify(metadata),
       },
       {
         'Content-Type': metadata.contentType || 'application/octet-stream',
-        body: writeStream
-      }
-    ]
+        body: writeStream,
+      },
+    ],
   });
 
   options.makeAuthenticatedRequest(reqOpts, {
@@ -262,7 +269,7 @@ function makeWritableStream(dup, options, onComplete) {
           onComplete(data);
         });
       });
-    }
+    },
   });
 }
 
@@ -368,7 +375,7 @@ function makeAuthenticatedRequestFactory(config) {
             projectId
           );
           err = null;
-        } catch(e) {
+        } catch (e) {
           // A projectId was required, but we don't have one.
           // Re-use the "Could not load the default credentials error" if auto
           // auth failed.
@@ -389,8 +396,11 @@ function makeAuthenticatedRequestFactory(config) {
       if (options && options.onAuthenticated) {
         options.onAuthenticated(null, authenticatedReqOpts);
       } else {
-        activeRequest_ =
-          util.makeRequest(authenticatedReqOpts, reqConfig, options);
+        activeRequest_ = util.makeRequest(
+          authenticatedReqOpts,
+          reqConfig,
+          options
+        );
       }
     }
 
@@ -412,12 +422,13 @@ function makeAuthenticatedRequestFactory(config) {
           activeRequest_.abort();
           activeRequest_ = null;
         }
-      }
+      },
     };
   }
 
-  makeAuthenticatedRequest.getCredentials =
-    authClient.getCredentials.bind(authClient);
+  makeAuthenticatedRequest.getCredentials = authClient.getCredentials.bind(
+    authClient
+  );
 
   makeAuthenticatedRequest.authClient = authClient;
 
@@ -456,7 +467,7 @@ function makeRequest(reqOpts, config, callback) {
     shouldRetryFn: function(httpRespMessage) {
       var err = util.parseHttpRespMessage(httpRespMessage).err;
       return err && util.shouldRetryRequest(err);
-    }
+    },
   };
 
   if (config.stream) {
@@ -474,7 +485,8 @@ function makeRequest(reqOpts, config, callback) {
     }
 
     // Replay the Request events back to the stream.
-    requestStream.on('error', dup.destroy.bind(dup))
+    requestStream
+      .on('error', dup.destroy.bind(dup))
       .on('response', dup.emit.bind(dup, 'response'))
       .on('complete', dup.emit.bind(dup, 'complete'));
 
@@ -606,14 +618,9 @@ util.extendGlobalConfig = extendGlobalConfig;
  * @param {object} globalContext - gcloud-level context.
  * @param {object} globalContext.config_ - gcloud-level configuration.
  * @param {object} localConfig - Service-level configurations.
- * @param {object=} options - Configuration object.
- * @param {boolean} options.projectIdRequired - Whether to throw if a project ID
- *     is required, but not provided by the user. (Default: true)
  * @return {object} config - Merged and validated configuration.
  */
-function normalizeArguments(globalContext, localConfig, options) {
-  options = options || {};
-
+function normalizeArguments(globalContext, localConfig) {
   var globalConfig = globalContext && globalContext.config_;
 
   return util.extendGlobalConfig(globalConfig, localConfig);
@@ -655,7 +662,7 @@ function createLimiter(makeRequestFn, options) {
       return stream;
     },
 
-    stream: stream
+    stream: stream,
   };
 }
 
@@ -785,15 +792,15 @@ util.promisify = promisify;
  * @param {object=} options - Configuration object.
  */
 function promisifyAll(Class, options) {
-  var exclude = options && options.exclude || [];
+  var exclude = (options && options.exclude) || [];
 
-  var methods = Object
-    .keys(Class.prototype)
-    .filter(function(methodName) {
-      return is.fn(Class.prototype[methodName]) && // is it a function?
-        !/(^\_|(Stream|\_)|promise$)/.test(methodName) && // is it promisable?
-        exclude.indexOf(methodName) === -1; // is it blacklisted?
-    });
+  var methods = Object.keys(Class.prototype).filter(function(methodName) {
+    return (
+      is.fn(Class.prototype[methodName]) && // is it a function?
+      !/(^_|(Stream|_)|promise$)/.test(methodName) && // is it promisable?
+      exclude.indexOf(methodName) === -1
+    ); // is it blacklisted?
+  });
 
   methods.forEach(function(methodName) {
     var originalMethod = Class.prototype[methodName];

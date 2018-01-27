@@ -77,16 +77,12 @@ function ServiceObject(config) {
     var allMethodNames = Object.keys(ServiceObject.prototype);
     allMethodNames
       .filter(function(methodName) {
-        return (
-          // All ServiceObjects need `request`.
+        return (// All ServiceObjects need `request`.
           !/^request/.test(methodName) &&
-
           // The ServiceObject didn't redefine the method.
           self[methodName] === ServiceObject.prototype[methodName] &&
-
           // This method isn't wanted.
-          !config.methods[methodName]
-        );
+          !config.methods[methodName] );
       })
       .forEach(function(methodName) {
         self[methodName] = undefined;
@@ -144,10 +140,13 @@ ServiceObject.prototype.delete = function(callback) {
   var methodConfig = this.methods.delete || {};
   callback = callback || util.noop;
 
-  var reqOpts = extend({
-    method: 'DELETE',
-    uri: ''
-  }, methodConfig.reqOpts);
+  var reqOpts = extend(
+    {
+      method: 'DELETE',
+      uri: '',
+    },
+    methodConfig.reqOpts
+  );
 
   // The `request` method may have been overridden to hold any special behavior.
   // Ensure we call the original `request` method.
@@ -255,9 +254,12 @@ ServiceObject.prototype.getMetadata = function(callback) {
 
   var methodConfig = this.methods.getMetadata || {};
 
-  var reqOpts = extend({
-    uri: ''
-  }, methodConfig.reqOpts);
+  var reqOpts = extend(
+    {
+      uri: '',
+    },
+    methodConfig.reqOpts
+  );
 
   // The `request` method may have been overridden to hold any special behavior.
   // Ensure we call the original `request` method.
@@ -289,11 +291,15 @@ ServiceObject.prototype.setMetadata = function(metadata, callback) {
 
   var methodConfig = this.methods.setMetadata || {};
 
-  var reqOpts = extend(true, {
-    method: 'PATCH',
-    uri: '',
-    json: metadata
-  }, methodConfig.reqOpts);
+  var reqOpts = extend(
+    true,
+    {
+      method: 'PATCH',
+      uri: '',
+      json: metadata,
+    },
+    methodConfig.reqOpts
+  );
 
   // The `request` method may have been overridden to hold any special behavior.
   // Ensure we call the original `request` method.
@@ -323,11 +329,7 @@ ServiceObject.prototype.request_ = function(reqOpts, callback) {
 
   var isAbsoluteUrl = reqOpts.uri.indexOf('http') === 0;
 
-  var uriComponents = [
-    this.baseUrl,
-    this.id || '',
-    reqOpts.uri
-  ];
+  var uriComponents = [this.baseUrl, this.id || '', reqOpts.uri];
 
   if (isAbsoluteUrl) {
     uriComponents.splice(0, uriComponents.indexOf(reqOpts.uri));

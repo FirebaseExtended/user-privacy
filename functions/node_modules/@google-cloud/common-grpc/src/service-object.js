@@ -128,5 +128,4 @@ GrpcServiceObject.prototype.requestWritableStream = function() {
  */
 util.promisifyAll(GrpcServiceObject);
 
-
 module.exports = GrpcServiceObject;

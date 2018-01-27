@@ -139,9 +139,11 @@ paginator.parseArguments_ = function(args) {
       delete query.maxApiCalls;
     }
 
-    if (callback &&
-        (maxResults !== -1 || // The user specified a limit.
-        query.autoPaginate === false)) {
+    if (
+      callback &&
+      (maxResults !== -1 || // The user specified a limit.
+        query.autoPaginate === false)
+    ) {
       autoPaginate = false;
     }
   }
@@ -151,7 +153,7 @@ paginator.parseArguments_ = function(args) {
     autoPaginate: autoPaginate,
     maxApiCalls: maxApiCalls,
     maxResults: maxResults,
-    callback: callback
+    callback: callback,
   };
 };
 
@@ -179,9 +181,11 @@ paginator.run_ = function(parsedArguments, originalMethod) {
   if (autoPaginate) {
     this.runAsStream_(parsedArguments, originalMethod)
       .on('error', callback)
-      .pipe(concat(function(results) {
-        callback(null, results);
-      }));
+      .pipe(
+        concat(function(results) {
+          callback(null, results);
+        })
+      );
   } else {
     originalMethod(query, callback);
   }
@@ -210,7 +214,7 @@ paginator.runAsStream_ = function(parsedArguments, originalMethod) {
   var resultsToSend = parsedArguments.maxResults;
 
   var limiter = util.createLimiter(makeRequest, {
-    maxApiCalls: parsedArguments.maxApiCalls
+    maxApiCalls: parsedArguments.maxApiCalls,
   });
 
   var stream = limiter.stream;

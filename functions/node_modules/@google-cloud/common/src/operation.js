@@ -61,14 +61,17 @@ function Operation(config) {
      */
     getMetadata: {
       reqOpts: {
-        name: config.id
-      }
-    }
+        name: config.id,
+      },
+    },
   };
 
-  config = extend({
-    baseUrl: ''
-  }, config);
+  config = extend(
+    {
+      baseUrl: '',
+    },
+    config
+  );
 
   config.methods = config.methods || methods;
 
@@ -92,11 +95,9 @@ Operation.prototype.promise = function() {
   var self = this;
 
   return new self.Promise(function(resolve, reject) {
-    self
-      .on('error', reject)
-      .on('complete', function(metadata) {
-        resolve([metadata]);
-      });
+    self.on('error', reject).on('complete', function(metadata) {
+      resolve([metadata]);
+    });
   });
 };
 
