@@ -138,9 +138,16 @@ var deleteAccount = function(firebaseStorage) {
 };
 
 var takeout = function() {
+  window.alert('Takeout has started and will be uploaded to storage.')
   var xhr = new XMLHttpRequest();
+  var body = firebase.auth().currentUser;
   xhr.open('POST', '/takeout', true);
-  xhr.send(JSON.stringify(firebase.auth().currentUser));
+  xhr.send(
+    JSON.stringify(body),
+    function(er, res, body) {
+      console.log(er, res, body);
+    }
+  );
 };
 
 /**
