@@ -129,7 +129,12 @@ firebase.auth().onAuthStateChanged(function(user) {
  * Deletes the user's account.
  */
 var deleteAccount = function(firebaseStorage) {
-  firebase.auth().currentUser.delete();
+  firebase.auth().currentUser.delete().catch(function(error) {
+    if (error.code === 'auth/requires-recent-login') {
+      window.alert('Please sign-in and try again.');
+      firebase.auth().signOut();
+    }
+  });
 };
 
 var takeout = function() {

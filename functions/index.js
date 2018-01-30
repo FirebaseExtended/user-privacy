@@ -3,10 +3,14 @@ const functions = require("firebase-functions");
 
 admin.initializeApp(functions.config().firebase);
 
+
 const db = admin.database();
 const firestore = admin.firestore();
 const storage = admin.storage();
+const FieldValue = admin.firestore.FieldValue;
 
+// App-specific default bucket for storage. Used to upload takeout json and in
+// sample json of wipeout and takeout paths.
 const bucketName = "wipeout-takeout.appspot.com";
 
 // Wipeout
@@ -17,15 +21,14 @@ const bucketName = "wipeout-takeout.appspot.com";
 // user deleting their account.
 exports.wipeout = functions.auth.user().onDelete(event => {
   var uid = event.data.uid;
-  var deletePromises = [];
 
-  deletePromises.push(wipeoutFromDatabase(uid, deletePromises));
-  deletePromises.push(wipeoutFromStorage(uid, deletePromises));
-  deletePromises.push(wipeoutFromFirestore(uid, deletePromises));
+  var databasePromise = databaseWipeout(uid);
+  var storagePromise = storageWipeout(uid);
+  var firestorePromise = firestoreWipeout(uid);
 
-  return Promise.all(deletePromises).then(() =>
+  return Promise.all([databasePromise, firestorePromise, storagePromise]).then(function() {
     console.log(`Wipeout success! There's no trace of user #${uid}.`)
-  );
+  })
 });
 
 // Delete data from all specified paths from the Realtime Database. To add or
@@ -34,15 +37,24 @@ exports.wipeout = functions.auth.user().onDelete(event => {
 // This function is called by the top-level `wipeout` function.
 //
 // Returns a list of Promises
-const wipeoutFromDatabase = (uid) => {
+const databaseWipeout = (uid) => {
   const databaseWipeoutPaths = user_privacy_paths.database.wipeout;
   var databasePromises = [];
 
   for (let i = 0; i < databaseWipeoutPaths.length; i++) {
     var path = databaseWipeoutPaths[i].replace(/UID/g, uid);
-    databasePromises.push(db.ref(path).remove());
+    databasePromises.push(db.ref(path).remove().catch(function(error) {
+      // Catching the errors is important because if a path doesn't exist, the
+      // returned error will interupt execution.
+      console.error("Error deleting path: ", error)
+    }));
   }
-  return databasePromises;
+
+  return Promise.all(databasePromises).then(function() {
+    return new Promise(function(resolve, reject) {
+      resolve(`Database wipeout complete for user with id ${uid}`)
+    });
+  })
 };
 
 // Wipeout all specified files from the Realtime Database. To add or remove a
@@ -51,7 +63,7 @@ const wipeoutFromDatabase = (uid) => {
 // This function is called by the top-level `wipeout` function.
 //
 // Returns a list of Promises
-const wipeoutFromStorage = (uid) => {
+const storageWipeout = (uid) => {
   const storageWipeoutPaths = user_privacy_paths.storage.wipeout;
   var storagePromises = []
 
@@ -60,10 +72,16 @@ const wipeoutFromStorage = (uid) => {
     var path = storageWipeoutPaths[i][1].replace(/UID/g, uid);
     var bucket = storage.bucket(bucketName);
     var file = bucket.file(path);
+    storagePromises.push(file.delete().catch(function(error) {
+      console.error("Error deleting file: ", error);
+    }));
+  };
 
-    storagePromises.push(file.delete())
-  }
-  return storagePromises;
+  return Promise.all(storagePromises).then(function() {
+    return new Promise(function(resolve, reject) {
+      resolve(`Storage wipeout complete for user with id ${uid}`)
+    });
+  })
 };
 
 // Wipeout all specified paths from the Firestore Database. To add or remove a
@@ -72,29 +90,36 @@ const wipeoutFromStorage = (uid) => {
 // This function is called by the top-level `wipeout` function.
 //
 // Returns a list of Promises
-const wipeoutFromFirestore = (uid) => {
+const firestoreWipeout = (uid) => {
   const firestoreWipeoutPaths = user_privacy_paths.firestore.wipeout;
   var firestorePromises = [];
 
   for (let i = 0; i < firestoreWipeoutPaths.length; i++) {
     var entry = firestoreWipeoutPaths[i]
-    var entryCollection = entry["collection"];
-    var entryDoc = entry["doc"];
-
-    if ("field" in entry) {
-      var refToDelete = firestore.collection(entryCollection).doc(entryDoc);
-      var entryField = entry["field"];
-      var FieldValue = require("firebase-admin").firestore.FieldValue;
-      firestorePromises.push(
-        refToDelete.update({ entryField: FieldValue.delete() })
-      );
+    var entryCollection = entry["collection"].replace(/UID/g, uid);
+    var entryDoc = entry["doc"].replace(/UID/g, uid);
+    var docToDelete = firestore.collection(entryCollection).doc(entryDoc);
+    if("field" in entry) {
+      entryField = entry["field"].replace(/UID/g, uid);
+      firestorePromises.push(docToDelete.update({
+        entryField: FieldValue.delete()
+      }).catch(function(error){
+        console.error("Error deleting field: ", error);
+      }));
     } else {
-      firestorePromises.push(
-        firestore.collection(entry["collection"]).doc(entry["doc"]).delete()
-      );
+      if (docToDelete) {
+        firestorePromises.push(docToDelete.delete().catch(function(error) {
+          console.error("Error deleting document: ", error);
+        }));
+      };
     }
-  }
-  return firestorePromises;
+  };
+
+  return Promise.all(firestorePromises).then(function() {
+    return new Promise(function(resolve, reject) {
+      resolve(`Firestore wipeout complete for user with id ${uid}`)
+    });
+  })
 };
 
 // Takeout
@@ -260,25 +285,25 @@ const user_privacy_paths = {
   "firestore": {
     "wipeout": [
       {"collection": "users", "doc": "UID", "field": "name"},
-      {"collection": "users", "doc": "UID", "field": "phone_num"},
-      {"collection": "admins", "doc": "UID"},
+      {"collection": "users", "doc": "UID"},
+      {"collection": "admins", "doc": "UID"}
     ],
     "takeout": [
       {"collection": "users", "doc": "UID", "field": "name"},
-      {"collection": "users", "doc": "UID", "field": "phone_num"},
-      {"collection": "admins", "doc": "UID"},
+      {"collection": "users", "doc": "UID"},
+      {"collection": "admins", "doc": "UID"}
     ]
   },
   "storage": {
     "wipeout": [
-      ["bucketName", "sample_data_for_UID.json"],
-      ["bucketName", "copy_of_sample_data_for_UID.json"],
-      ["bucketName", "UID"]
+      [bucketName, "sample_data_for_UID.json"],
+      [bucketName, "copy_of_sample_data_for_UID.json"],
+      [bucketName, "UID"]
     ],
     "takeout": [
-      ["bucketName", "sample_data_for_UID.json"],
-      ["bucketName", "copy_of_sample_data_for_UID.json"],
-      ["bucketName", "UID"]
+      [bucketName, "sample_data_for_UID.json"],
+      [bucketName, "copy_of_sample_data_for_UID.json"],
+      [bucketName, "UID"]
     ]
   }
 }
