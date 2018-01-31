@@ -1,5 +1,16 @@
 service firebase.storage {
   match /b/{bucket}/o {
+    // Takeout files are named by the UID of the user who requested takeout
+    // It's readable only by the user of that ID
+    // No one should be able to change it, so we make it write: false.
+    // The function creating the file is in admin mode, so overrides rules restrictions
+    match /{uid} {
+      allow read: if request.auth.uid == uid
+    }
+    match /{uid}/{path} {
+      allow read: if request.auth.uid == uid
+    }
+
     match /{allPaths=**} {
       allow read, write: if request.auth!=null;
     }
