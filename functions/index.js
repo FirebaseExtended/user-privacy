@@ -190,7 +190,7 @@ const firestoreTakeout = (uid) => {
   var firestoreTakeout = {};
 
   for (let i = 0; i < firestoreTakeoutPaths.length; i++) {
-    var entry = firestoreWipeoutPaths[i]
+    var entry = firestoreTakeoutPaths[i]
     var entryCollection = entry["collection"];
     var entryDoc =  entry["doc"].replace(/UID/g, uid);
     var takeoutRef = firestore.collection(entryCollection).doc(entryDoc);
@@ -241,10 +241,10 @@ const storageTakeout = (uid) => {
 
     // Copy the asset that the app uses, to a new location that the security
     // rules make only accessible to the user.
-    sourceFile.copy(`${uid}/${path}`);
+    sourceFile.copy(`takeout/${uid}/${path}`);
 
     // Create a list of storage assets to include in the takeout JSON.
-    storageTakeout[`${bucketName}/${path}`] = `${bucketName}/${uid}/${path}`;
+    storageTakeout[`${bucketName}/${path}`] = `${bucketName}/takeout/${uid}/${path}`;
   }
   console.log("storageTakeout: ", storageTakeout);
   return new Promise(function(resolve, reject) {
@@ -261,7 +261,7 @@ const storageTakeout = (uid) => {
 const uploadToStorage = (uid, takeout) => {
   var json = JSON.stringify(takeout);
   var bucket = storage.bucket(bucketName);
-  var file = bucket.file(`${uid}.json`);
+  var file = bucket.file(`takeout/${uid}.json`);
 
   return file.save(json);
 };
