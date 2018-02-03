@@ -11,12 +11,6 @@
   },
   "hosting": {
     "public": "public",
-    "rewrites": [
-      {
-        "source": "/takeout",
-        "function": "takeout"
-      }
-    ],
     "ignore": [
       "firebase.json",
       "**/.*",
