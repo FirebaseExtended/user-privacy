@@ -92,7 +92,7 @@ var handleSignedInUser = function(user) {
   };
 
   firebase.storage().ref()
-    .child(`sample_data_for_${user.uid}.json`)
+    .child(`${user.uid}/sample_data.json`)
     .putString(`{photo: ${user.photoURL}}`);
   firebase.database().ref('users/' + user.uid).set(data);
   firebase.firestore().collection('users').doc(user.uid).set(data);

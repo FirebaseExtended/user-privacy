@@ -1,23 +1,17 @@
 service firebase.storage {
   match /b/{bucket}/o {
-    // For all json files with only one path after `/takeout`,
-    // i.e. the json files created by the `takeout` function,
-    match /takeout/{uid} {
-      // Only allow access if the user id of the user requesting this file
-      // matches the name of the takeout file.
-      allow read, write: if request.auth.uid == uid
-      // The function creating these files operates in admin mode,
-      // which ignores these rules.
-    }
-    // Match the paths of storage files copied during storage takeout
-    match /takeout/{uid}/{path} {
-      // Only the user who requested takeout can read the files
-      allow read, write: if request.auth.uid == uid
-      // No one can write.
-    }
+    match /takeout {
+      // Only allow takeout access for the user who requested takeout
+      match /{uid} {
+        allow read, write: if request.auth.uid == uid
+      }
+      match /{uid}/{path=**} {
+        allow read, write: if request.auth.uid == uid
+      }
+  	}
     // Other application rules
-    match /{path} {
-      allow read, write: if request.auth.uid != null
+    match /{uid}/{path=**} {
+      allow read, write: if request.auth.uid == uid
     }
   }
 }

@@ -3,7 +3,6 @@ const functions = require("firebase-functions");
 
 admin.initializeApp(functions.config().firebase);
 
-
 const db = admin.database();
 const firestore = admin.firestore();
 const storage = admin.storage();
@@ -236,7 +235,7 @@ const storageTakeout = (uid) => {
     var entry = storageTakeoutPaths[i];
     var bucketName = entry[0].replace(/UID/g, uid);
     var path = entry[1].replace(/UID/g, uid);
-    var sourceBucket = storage.bucket(sourceBucketName);
+    var sourceBucket = storage.bucket(bucketName);
     var sourceFile = sourceBucket.file(path);
 
     // Copy the asset that the app uses, to a new location that the security
@@ -261,7 +260,7 @@ const storageTakeout = (uid) => {
 const uploadToStorage = (uid, takeout) => {
   var json = JSON.stringify(takeout);
   var bucket = storage.bucket(bucketName);
-  var file = bucket.file(`takeout/${uid}.json`);
+  var file = bucket.file(`takeout/${uid}_takeout.json`);
 
   return file.save(json);
 };
@@ -295,13 +294,13 @@ const user_privacy_paths = {
   },
   "storage": {
     "wipeout": [
-      [bucketName, "sample_data_for_UID.json"],
-      [bucketName, "copy_of_sample_data_for_UID.json"],
+      [bucketName, "UID/sample_data.json"],
+      [bucketName, "UID/copy_of_sample_data.json"],
       [bucketName, "UID"]
     ],
     "takeout": [
-      [bucketName, "sample_data_for_UID.json"],
-      [bucketName, "copy_of_sample_data_for_UID.json"],
+      [bucketName, "UID/sample_data.json"],
+      [bucketName, "UID/copy_of_sample_data.json"],
       [bucketName, "UID"]
     ]
   }
