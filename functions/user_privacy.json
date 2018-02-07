@@ -1,0 +1,34 @@
+{
+  "database": {
+    "wipeout": [
+      "/users/UID",
+      "/admins/UID"
+    ],
+    "takeout": [
+      "/users/UID",
+      "/admins/UID"
+    ]
+  },
+  "firestore": {
+    "wipeout": [
+      {"collection": "users", "doc": "UID", "field": "name"},
+      {"collection": "users", "doc": "UID"},
+      {"collection": "admins", "doc": "UID"}
+    ],
+    "takeout": [
+      {"collection": "users", "doc": "UID", "field": "name"},
+      {"collection": "users", "doc": "UID"},
+      {"collection": "admins", "doc": "UID"}
+    ]
+  },
+  "storage": {
+    "wipeout": [
+      ["wipeout-takeout.appspot.com", "UID/sample_data.json"],
+      ["wipeout-takeout.appspot.com", "UID/copy_of_sample_data.json"],
+      ["wipeout-takeout.appspot.com", "UID"]
+    ],
+    "takeout": [
+      ["wipeout-takeout.appspot.com", "UID/sample_data.json"]
+    ]
+  }
+}
