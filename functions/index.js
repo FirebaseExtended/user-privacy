@@ -79,7 +79,7 @@ const storageWipeout = (uid) => {
     }));
   };
 
-  return Promise.all(storagePromises).then(function() {
+  return Promise.all(promises).then(function() {
     return new Promise(function(resolve, reject) {
       resolve(`Storage wipeout complete for user with id ${uid}`);
     });
@@ -209,7 +209,6 @@ const firestoreTakeout = (uid) => {
     var entryDoc =  entry["doc"].replace(/UID/g, uid);
     var takeoutRef = firestore.collection(entryCollection).doc(entryDoc);
     var path = `${entryCollection}/${entryDoc}`;
-
     promises.push(
       takeoutRef.get()
       .then(doc => {
@@ -219,7 +218,7 @@ const firestoreTakeout = (uid) => {
             var entryField = entry["field"].replace(/UID/g, uid);
             read = read.field(entryField);
           }
-          firestoreTakeout[path] = read;
+          takeout[path] = read;
         }
       }).catch(err => {
         console.error("Error encountered during firestore takeout: ", err);
@@ -230,7 +229,7 @@ const firestoreTakeout = (uid) => {
   }
   return Promise.all(promises).then(function() {
     return new Promise(function(resolve, reject) {
-      resolve(firestoreTakeout);
+      resolve(takeout);
     });
   });
 };
@@ -282,5 +281,4 @@ const uploadToStorage = (uid, takeout) => {
   var file = bucket.file(`takeout/${uid}_takeout.json`);
 
   takeoutUpload = file.save(json);
-  console.log ("Takeout data has been successfully uploaded to storage.", takeoutUpload);
 };
