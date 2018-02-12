@@ -29,9 +29,9 @@ exports.wipeout = functions.auth.user().onDelete(event => {
   let storagePromise = storageWipeout(uid);
   let firestorePromise = firestoreWipeout(uid);
 
-  return Promise.all([databasePromise, firestorePromise, storagePromise]).then(function() {
-    console.log(`Wipeout success! There's no trace of user #${uid}.`);
-  });
+  return Promise.all([databasePromise, firestorePromise, storagePromise])
+    .then(() => console.log(`Wipeout success! There's no trace of user #${uid}.`)
+  );
 });
 
 // Delete data from all specified paths from the Realtime Database. To add or
@@ -46,14 +46,14 @@ const databaseWipeout = (uid) => {
 
   for (let i = 0; i < paths.length; i++) {
     let path = paths[i].replace(/UID/g, uid);
-    promises.push(db.ref(path).remove().catch(function(error) {
+    promises.push(db.ref(path).remove().catch((error) => {
       // Avoid execution interuption.
       console.error("Error deleting path: ", error);
     }));
   }
 
-  return Promise.all(promises).then(function() {
-    return new Promise(function(resolve, reject) {
+  return Promise.all(promises).then(() => {
+    return new Promise((resolve, reject) => {
       resolve(`Database wipeout complete for user with id ${uid}`);
     });
   });
@@ -74,13 +74,13 @@ const storageWipeout = (uid) => {
     let path = paths[i][1].replace(/UID/g, uid);
     let bucket = storage.bucket(bucketName);
     let file = bucket.file(path);
-    promises.push(file.delete().catch(function(error) {
+    promises.push(file.delete().catch((error) => {
       console.error("Error deleting file: ", error);
     }));
   };
 
-  return Promise.all(promises).then(function() {
-    return new Promise(function(resolve, reject) {
+  return Promise.all(promises).then(() => {
+    return new Promise((resolve, reject) => {
       resolve(`Storage wipeout complete for user with id ${uid}`);
     });
   });
@@ -105,20 +105,20 @@ const firestoreWipeout = (uid) => {
       entryField = entry["field"].replace(/UID/g, uid);
       promises.push(docToDelete.update({
         entryField: FieldValue.delete()
-      }).catch(function(error){
+      }).catch((error) => {
         console.error("Error deleting field: ", error);
       }));
     } else {
       if (docToDelete) {
-        promises.push(docToDelete.delete().catch(function(error) {
+        promises.push(docToDelete.delete().catch((error) => {
           console.error("Error deleting document: ", error);
         }));
       };
     };
   };
 
-  return Promise.all(promises).then(function() {
-    return new Promise(function(resolve, reject) {
+  return Promise.all(promises).then(() => {
+    return new Promise((resolve, reject) => {
       resolve(`Firestore wipeout complete for user with id ${uid}`);
     });
   });
@@ -140,17 +140,17 @@ exports.takeout = functions.https.onRequest((req, res) => {
   const uid = JSON.parse(req.body).uid;
   let takeout = {};
 
-  let databasePromise = databaseTakeout(uid).then(function(databaseData) {
+  let databasePromise = databaseTakeout(uid).then((databaseData) => {
     takeout["database"] = databaseData;
   });
-  let firestorePromise = firestoreTakeout(uid).then(function(firestoreData) {
+  let firestorePromise = firestoreTakeout(uid).then((firestoreData) => {
     takeout["firestore"] = firestoreData;
   });
-  let storagePromise = storageTakeout(uid).then(function(storageReferences) {
+  let storagePromise = storageTakeout(uid).then((storageReferences) => {
     takeout["storage"] = storageReferences
   });
 
-  return Promise.all([databasePromise, firestorePromise, storagePromise]).then(function() {
+  return Promise.all([databasePromise, firestorePromise, storagePromise]).then(() => {
     console.log(`Success! Completed takeout for user ${uid}.`);
     return uploadToStorage(uid, takeout);
   }).then(() => res.json("{takeoutComplete: true}"));
@@ -172,21 +172,21 @@ const databaseTakeout = (uid) => {
     promises.push(
       db.ref(path)
       .once("value")
-      .then(function(snapshot) {
+      .then((snapshot) => {
         read = snapshot.val();
         if (read !== null) {
           takeout[snapshot.key] = read;
         }
       }).catch(err => {
         console.error("Error encountered during database takeout: ", err);
-      }).then(new Promise(function(resolve, reject) {
+      }).then(new Promise((resolve, reject) => {
         resolve(path);
       }))
     );
   };
 
-  return Promise.all(promises).then(function() {
-    return new Promise(function(resolve, reject) {
+  return Promise.all(promises).then(() => {
+    return new Promise((resolve, reject) => {
       resolve(takeout);
     });
   });
@@ -222,13 +222,13 @@ const firestoreTakeout = (uid) => {
         }
       }).catch(err => {
         console.error("Error encountered during firestore takeout: ", err);
-      }).then(new Promise(function(resolve, reject) {
+      }).then(new Promise((resolve, reject) => {
         resolve(path);
       }))
     );
   }
-  return Promise.all(promises).then(function() {
-    return new Promise(function(resolve, reject) {
+  return Promise.all(promises).then(() => {
+    return new Promise((resolve, reject) => {
       resolve(takeout);
     });
   });
@@ -264,7 +264,7 @@ const storageTakeout = (uid) => {
     sourceFile.copy(destinationPath);
     takeout[`${entryBucket}/${path}`] = `${appBucketName}/${destinationPath}`;
   }
-  return new Promise(function(resolve, reject) {
+  return new Promise((resolve, reject) => {
     resolve(takeout);
   });
 };
