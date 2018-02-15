@@ -9,7 +9,9 @@ to change to fit the needs of your specific users and apps.
 ### How to play with these functions
 
 - [ ] Clone this repository
-- [ ] Create a new firebase project and go through the `firebase init` flow. This project uses Hosting, Functions, the RealTime Database, Firestore, and Storage.
+- [ ] Create a new firebase project and go through the `firebase init` flow.
+This project uses Hosting, Functions, the RealTime Database, Firestore, and
+Storage.
 - [ ] `cd` into the `functions` directory and `npm install`
 - [ ] Run `firebase deploy`
 

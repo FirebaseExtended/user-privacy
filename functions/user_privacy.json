@@ -1,34 +1,33 @@
 {
   "database": {
     "wipeout": [
-      "/users/UID",
-      "/admins/UID"
+      "/users/UID_VARIABLE",
+      "/admins/UID_VARIABLE"
     ],
     "takeout": [
-      "/users/UID",
-      "/admins/UID"
+      "/users/UID_VARIABLE",
+      "/admins/UID_VARIABLE"
     ]
   },
   "firestore": {
     "wipeout": [
-      {"collection": "users", "doc": "UID", "field": "name"},
-      {"collection": "users", "doc": "UID"},
-      {"collection": "admins", "doc": "UID"}
+      {"collection": "users", "doc": "UID_VARIABLE", "field": "name"},
+      {"collection": "users", "doc": "UID_VARIABLE"},
+      {"collection": "admins", "doc": "UID_VARIABLE"}
     ],
     "takeout": [
-      {"collection": "users", "doc": "UID", "field": "name"},
-      {"collection": "users", "doc": "UID"},
-      {"collection": "admins", "doc": "UID"}
+      {"collection": "users", "doc": "UID_VARIABLE", "field": "name"},
+      {"collection": "users", "doc": "UID_VARIABLE"},
+      {"collection": "admins", "doc": "UID_VARIABLE"}
     ]
   },
   "storage": {
     "wipeout": [
-      ["wipeout-takeout.appspot.com", "UID/sample_data.json"],
-      ["wipeout-takeout.appspot.com", "UID/copy_of_sample_data.json"],
-      ["wipeout-takeout.appspot.com", "UID"]
+      ["wipeout-takeout.appspot.com", "UID_VARIABLE/sample_data.json"],
+      ["wipeout-takeout.appspot.com", "UID_VARIABLE"]
     ],
     "takeout": [
-      ["wipeout-takeout.appspot.com", "UID/sample_data.json"]
+      ["wipeout-takeout.appspot.com", "UID_VARIABLE/sample_data.json"]
     ]
   }
 }
