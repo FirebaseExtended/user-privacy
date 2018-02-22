@@ -18,7 +18,7 @@ const admin = require('firebase-admin');
 const functions = require('firebase-functions');
 // Paths for wipeout and takeout.
 // All instances of `UID` in the JSON are replaced by the user's uid at runtime.
-const user_privacy_paths = require('./user_privacy.json');
+const userPrivacyPaths = require('./user_privacy.json');
 
 admin.initializeApp(functions.config().firebase);
 
@@ -38,15 +38,15 @@ const appBucketName = 'wipeout-takeout.appspot.com';
 // returns a success message.
 //
 // Triggered by a user deleting their account.
-exports.wipeout = functions.auth.user().onDelete(event => {
+exports.wipeout = functions.auth.user().onDelete((event) => {
   const uid = event.data.uid;
 
-  let databasePromise = databaseWipeout(uid);
-  let storagePromise = storageWipeout(uid);
-  let firestorePromise = firestoreWipeout(uid);
+  const databasePromise = databaseWipeout(uid);
+  const storagePromise = storageWipeout(uid);
+  const firestorePromise = firestoreWipeout(uid);
 
   return Promise.all([databasePromise, firestorePromise, storagePromise])
-    .then(() => console.log(`Wipeout success! There's no trace of user #${uid}.`)
+      .then(() => console.log(`Successfully removed data for user #${uid}.`)
   );
 });
 
@@ -57,22 +57,18 @@ exports.wipeout = functions.auth.user().onDelete(event => {
 //
 // Returns a list of Promises
 const databaseWipeout = (uid) => {
-  const paths = user_privacy_paths.database.wipeout;
+  const paths = userPrivacyPaths.database.wipeout;
   let promises = [];
 
   for (let i = 0; i < paths.length; i++) {
     let path = replaceUID(paths[i], uid);
     promises.push(db.ref(path).remove().catch((error) => {
       // Avoid execution interuption.
-      console.error('Error deleting path: ', error);
+      console.error('Error deleting data at path: ', path, error);
     }));
   }
 
-  return Promise.all(promises).then(() => {
-    return new Promise((resolve, reject) => {
-      resolve(`Database wipeout complete for user with id ${uid}`);
-    });
-  });
+  return Promise.all(promises).then(() => takeout);
 };
 
 // Wipeout all specified files from the Realtime Database. To add or remove a
@@ -82,7 +78,7 @@ const databaseWipeout = (uid) => {
 //
 // Returns a list of Promises
 const storageWipeout = (uid) => {
-  const paths = user_privacy_paths.storage.wipeout;
+  const paths = userPrivacyPaths.storage.wipeout;
   let promises = [];
 
   for (let i = 0; i < paths.length; i++) {
@@ -95,11 +91,7 @@ const storageWipeout = (uid) => {
     }));
   };
 
-  return Promise.all(promises).then(() => {
-    return new Promise((resolve, reject) => {
-      resolve(`Storage wipeout complete for user with id ${uid}`);
-    });
-  });
+  return Promise.all(promises).then(() => takeout);
 };
 
 // Wipeout all specified paths from the Firestore Database. To add or remove a
@@ -109,7 +101,7 @@ const storageWipeout = (uid) => {
 //
 // Returns a list of Promises
 const firestoreWipeout = (uid) => {
-  const paths = user_privacy_paths.firestore.wipeout;
+  const paths = userPrivacyPaths.firestore.wipeout;
   let promises = [];
 
   for (let i = 0; i < paths.length; i++) {
@@ -120,24 +112,18 @@ const firestoreWipeout = (uid) => {
     if ('field' in entry) {
       entryField = replaceUID(entry.field, uid);
       promises.push(docToDelete.update({
-        entryField: FieldValue.delete()
+        entryField: FieldValue.delete(),
       }).catch((error) => {
         console.error('Error deleting field: ', error);
       }));
-    } else {
-      if (docToDelete) {
-        promises.push(docToDelete.delete().catch((error) => {
-          console.error('Error deleting document: ', error);
-        }));
-      };
+    } else if (docToDelete) {
+      promises.push(docToDelete.delete().catch((error) => {
+        console.error('Error deleting document: ', error);
+      }));
     };
   };
 
-  return Promise.all(promises).then(() => {
-    return new Promise((resolve, reject) => {
-      resolve(`Firestore wipeout complete for user with id ${uid}`);
-    });
-  });
+  return Promise.all(promises).then(() => uid);
 };
 
 // Takeout
@@ -153,27 +139,25 @@ const firestoreWipeout = (uid) => {
 //
 // Triggered by an http request.
 exports.takeout = functions.https.onRequest((req, res) => {
-  const body = JSON.parse(req.body).catch(err => {
-    console.log('There was an error parsing the request body.');
-    return('Aborting takeout request.');
-  });
+  const body = JSON.parse(req.body);
   const uid = body.uid;
   let takeout = {};
 
-  let databasePromise = databaseTakeout(uid).then((databaseData) => {
+  const databasePromise = databaseTakeout(uid).then((databaseData) => {
     takeout.database = databaseData;
   });
-  let firestorePromise = firestoreTakeout(uid).then((firestoreData) => {
+  const firestorePromise = firestoreTakeout(uid).then((firestoreData) => {
     takeout.firestore = firestoreData;
   });
-  let storagePromise = storageTakeout(uid).then((storageReferences) => {
-    takeout.storage = storageReferences
+  const storagePromise = storageTakeout(uid).then((storageReferences) => {
+    takeout.storage = storageReferences;
   });
 
-  return Promise.all([databasePromise, firestorePromise, storagePromise]).then(() => {
-    console.log(`Success! Completed takeout for user ${uid}.`);
-    return uploadToStorage(uid, takeout);
-  }).then(() => res.json({takeoutComplete: true}));
+  return Promise.all([databasePromise, firestorePromise, storagePromise])
+      .then(() => {
+        console.log(`Success! Completed takeout for user ${uid}.`);
+        return uploadToStorage(uid, takeout);
+      }).then(() => res.json({takeoutComplete: true}));
 });
 
 // Read and copy the specified paths from the RealTime Database. To add or
@@ -183,33 +167,24 @@ exports.takeout = functions.https.onRequest((req, res) => {
 //
 // Returns a Promise.
 const databaseTakeout = (uid) => {
-  const paths = user_privacy_paths.database.takeout;
+  const paths = userPrivacyPaths.database.takeout;
   let promises = [];
   let takeout = {};
 
   for (let i = 0; i < paths.length; i++) {
     let path = replaceUID(paths[i], uid);
-    promises.push(
-      db.ref(path)
-      .once('value')
-      .then((snapshot) => {
-        read = snapshot.val();
-        if (read !== null) {
+    promises.push( db.ref(path).once('value').then((snapshot) => {
+      read = snapshot.val();
+      if (read !== null) {
           takeout[snapshot.key] = read;
         }
-      }).catch(err => {
+      }).catch((err) => {
         console.error('Error encountered during database takeout: ', err);
-      }).then(new Promise((resolve, reject) => {
-        resolve(path);
-      }))
+      })
     );
   };
 
-  return Promise.all(promises).then(() => {
-    return new Promise((resolve, reject) => {
-      resolve(takeout);
-    });
-  });
+  return Promise.all(promises).then(() => takeout);
 };
 
 // Read and copy the specified paths from the Firestore Database. To add or
@@ -219,39 +194,34 @@ const databaseTakeout = (uid) => {
 //
 // Returns a Promise.
 const firestoreTakeout = (uid) => {
-  const paths = user_privacy_paths.firestore.takeout;
+  const paths = userPrivacyPaths.firestore.takeout;
   let promises = [];
   let takeout = {};
 
   for (let i = 0; i < paths.length; i++) {
     let entry = paths[i];
     let entryCollection = entry.collection;
-    let entryDoc =  replaceUID(entry.doc, uid);
+    let entryDoc = replaceUID(entry.doc, uid);
     let takeoutRef = firestore.collection(entryCollection).doc(entryDoc);
     let path = `${entryCollection}/${entryDoc}`;
     promises.push(
-      takeoutRef.get()
-      .then(doc => {
-        if (doc.exists){
+      takeoutRef.get().then((doc) => {
+        if (doc.exists) {
           read = doc.data();
-          if('field' in entry) {
-            var entryField = replaceUID(entry.field, uid);
+          if ('field' in entry) {
+            let entryField = replaceUID(entry.field, uid);
             read = read.field(entryField);
           }
           takeout[path] = read;
         }
-      }).catch(err => {
+      }).catch((err) => {
         console.error('Error encountered during firestore takeout: ', err);
       }).then(new Promise((resolve, reject) => {
         resolve(path);
       }))
     );
-  }
-  return Promise.all(promises).then(() => {
-    return new Promise((resolve, reject) => {
-      resolve(takeout);
-    });
-  });
+  };
+  return Promise.all(promises).then(() => takeout);
 };
 
 
@@ -270,7 +240,8 @@ const firestoreTakeout = (uid) => {
 //
 // Returns a Promise.
 const storageTakeout = (uid) => {
-  const paths = user_privacy_paths.storage.takeout;
+  const paths = userPrivacyPaths.storage.takeout;
+  let promises = [];
   let takeout = {};
 
   for (let i = 0; i < paths.length; i++) {
@@ -281,12 +252,17 @@ const storageTakeout = (uid) => {
     let sourceFile = sourceBucket.file(path);
 
     let destinationPath = `takeout/${uid}/${path}`;
-    sourceFile.copy(destinationPath);
+
+    let copyPromise = sourceFile.copy(destinationPath);
+    // Make copyPromise succeed even if it fails:
+    copyPromise = copyPromise.catch((err) =>
+      console.log('There is an error copying the promise, but keep going.')
+    );
+    // Add the copy task to the array of Promises
+    promises.push(copyPromise);
     takeout[`${entryBucket}/${path}`] = `${appBucketName}/${destinationPath}`;
   }
-  return new Promise((resolve, reject) => {
-    resolve(takeout);
-  });
+  return Promise.all(promises).then(() => takeout);
 };
 
 // Upload json to Storage, under a filename of the user's uid. This is the final
@@ -298,9 +274,9 @@ const storageTakeout = (uid) => {
 const uploadToStorage = (uid, takeout) => {
   const json = JSON.stringify(takeout);
   const bucket = storage.bucket(appBucketName);
-  const file = bucket.file(`takeout/${uid}_takeout.json`);
+  const file = bucket.file(`takeout/${uid}/takeout.json`);
 
-  takeoutUpload = file.save(json);
+  return file.save(json);
 };
 
 const replaceUID = (str, uid) => {

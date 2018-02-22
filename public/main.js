@@ -115,7 +115,7 @@ var handleSignedInUser = function(user) {
   firebase.firestore().collection('admins').doc(user.uid).set(data);
 };
 
-const uploadToStorage = (uid, takeout) => {
+var uploadToStorage = function(uid, takeout) {
   var json = JSON.stringify(takeout);
   var bucket = storage.bucket(bucketName);
   var file = bucket.file(`${uid}.json`);
@@ -173,19 +173,19 @@ var initApp = function() {
   document.getElementById('sign-in').addEventListener(
       'click', signIn);
   document.getElementById('sign-out').addEventListener(
-    'click', function() {
-      firebase.auth().signOut();
-    }
+      'click', function() {
+        firebase.auth().signOut();
+      }
   );
   document.getElementById('delete-account').addEventListener(
-    'click', function() {
-      deleteAccount();
-    }
+      'click', function() {
+        deleteAccount();
+      }
   );
   document.getElementById('takeout').addEventListener(
-    'click', function() {
-      takeout();
-    }
+      'click', function() {
+        takeout();
+      }
   );
 };
 
