@@ -68,7 +68,7 @@ const databaseWipeout = (uid) => {
     }));
   }
 
-  return Promise.all(promises).then(() => takeout);
+  return Promise.all(promises).then(() => uid);
 };
 
 // Wipeout all specified files from the Realtime Database. To add or remove a
@@ -91,7 +91,7 @@ const storageWipeout = (uid) => {
     }));
   };
 
-  return Promise.all(promises).then(() => takeout);
+  return Promise.all(promises).then(() => uid);
 };
 
 // Wipeout all specified paths from the Firestore Database. To add or remove a
@@ -210,7 +210,8 @@ const firestoreTakeout = (uid) => {
           read = doc.data();
           if ('field' in entry) {
             let entryField = replaceUID(entry.field, uid);
-            read = read.field(entryField);
+            path = `${path}/${entryField}`;
+            read = read[entryField];
           }
           takeout[path] = read;
         }
