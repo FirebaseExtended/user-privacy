@@ -108,8 +108,8 @@ var handleSignedInUser = function(user) {
   };
 
   firebase.storage().ref()
-    .child(`${user.uid}/sample_data.json`)
-    .putString(`{photo: ${user.photoURL}}`);
+      .child(`${user.uid}/sample_data.json`)
+      .putString(`{photo: ${user.photoURL}}`);
   firebase.database().ref('users/' + user.uid).set(data);
   firebase.firestore().collection('users').doc(user.uid).set(data);
   firebase.firestore().collection('admins').doc(user.uid).set(data);
@@ -159,10 +159,10 @@ var takeout = function() {
   var body = firebase.auth().currentUser;
   xhr.open('POST', '/takeout', true);
   xhr.send(
-    JSON.stringify(body),
-    function(er, res, body) {
-      console.log(er, res, body);
-    }
+      JSON.stringify(body),
+      function(er, res, body) {
+        console.log(er, res, body);
+      }
   );
 };
 

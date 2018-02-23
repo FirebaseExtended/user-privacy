@@ -176,12 +176,11 @@ const databaseTakeout = (uid) => {
     promises.push(db.ref(path).once('value').then((snapshot) => {
       let read = snapshot.val();
       if (read !== null) {
-          takeout[snapshot.key] = read;
-        }
-      }).catch((err) => {
-        console.error('Error encountered during database takeout: ', err);
-      })
-    );
+        takeout[snapshot.key] = read;
+      }
+    }).catch((err) => {
+      console.error('Error encountered during database takeout: ', err);
+    }));
   };
 
   return Promise.all(promises).then(() => takeout);
