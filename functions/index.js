@@ -58,10 +58,10 @@ exports.wipeout = functions.auth.user().onDelete((event) => {
 // Returns a list of Promises
 const databaseWipeout = (uid) => {
   const paths = userPrivacyPaths.database.wipeout;
-  let promises = [];
+  const promises = [];
 
   for (let i = 0; i < paths.length; i++) {
-    let path = replaceUID(paths[i], uid);
+    const path = replaceUID(paths[i], uid);
     promises.push(db.ref(path).remove().catch((error) => {
       // Avoid execution interuption.
       console.error('Error deleting data at path: ', path, error);
@@ -79,13 +79,13 @@ const databaseWipeout = (uid) => {
 // Returns a list of Promises
 const storageWipeout = (uid) => {
   const paths = userPrivacyPaths.storage.wipeout;
-  let promises = [];
+  const promises = [];
 
   for (let i = 0; i < paths.length; i++) {
-    let bucketName = replaceUID(paths[i][0], uid);
-    let path = replaceUID(paths[i][1], uid);
-    let bucket = storage.bucket(bucketName);
-    let file = bucket.file(path);
+    const bucketName = replaceUID(paths[i][0], uid);
+    const path = replaceUID(paths[i][1], uid);
+    const bucket = storage.bucket(bucketName);
+    const file = bucket.file(path);
     promises.push(file.delete().catch((error) => {
       console.error('Error deleting file: ', path, error);
     }));
@@ -102,13 +102,13 @@ const storageWipeout = (uid) => {
 // Returns a list of Promises
 const firestoreWipeout = (uid) => {
   const paths = userPrivacyPaths.firestore.wipeout;
-  let promises = [];
+  const promises = [];
 
   for (let i = 0; i < paths.length; i++) {
-    let entry = paths[i];
-    let entryCollection = replaceUID(entry.collection, uid);
-    let entryDoc = replaceUID(entry.doc, uid);
-    let docToDelete = firestore.collection(entryCollection).doc(entryDoc);
+    const entry = paths[i];
+    const entryCollection = replaceUID(entry.collection, uid);
+    const entryDoc = replaceUID(entry.doc, uid);
+    const docToDelete = firestore.collection(entryCollection).doc(entryDoc);
     if ('field' in entry) {
       entryField = replaceUID(entry.field, uid);
       promises.push(docToDelete.update({
@@ -141,7 +141,7 @@ const firestoreWipeout = (uid) => {
 exports.takeout = functions.https.onRequest((req, res) => {
   const body = JSON.parse(req.body);
   const uid = body.uid;
-  let takeout = {};
+  const takeout = {};
 
   const databasePromise = databaseTakeout(uid).then((databaseData) => {
     takeout.database = databaseData;
@@ -168,13 +168,13 @@ exports.takeout = functions.https.onRequest((req, res) => {
 // Returns a Promise.
 const databaseTakeout = (uid) => {
   const paths = userPrivacyPaths.database.takeout;
-  let promises = [];
-  let takeout = {};
+  const promises = [];
+  const takeout = {};
 
   for (let i = 0; i < paths.length; i++) {
-    let path = replaceUID(paths[i], uid);
-    promises.push( db.ref(path).once('value').then((snapshot) => {
-      read = snapshot.val();
+    const path = replaceUID(paths[i], uid);
+    promises.push(db.ref(path).once('value').then((snapshot) => {
+      let read = snapshot.val();
       if (read !== null) {
           takeout[snapshot.key] = read;
         }
@@ -195,21 +195,21 @@ const databaseTakeout = (uid) => {
 // Returns a Promise.
 const firestoreTakeout = (uid) => {
   const paths = userPrivacyPaths.firestore.takeout;
-  let promises = [];
-  let takeout = {};
+  const promises = [];
+  const takeout = {};
 
   for (let i = 0; i < paths.length; i++) {
-    let entry = paths[i];
-    let entryCollection = entry.collection;
-    let entryDoc = replaceUID(entry.doc, uid);
-    let takeoutRef = firestore.collection(entryCollection).doc(entryDoc);
-    let path = `${entryCollection}/${entryDoc}`;
+    const entry = paths[i];
+    const entryCollection = entry.collection;
+    const entryDoc = replaceUID(entry.doc, uid);
+    const takeoutRef = firestore.collection(entryCollection).doc(entryDoc);
+    const path = `${entryCollection}/${entryDoc}`;
     promises.push(
       takeoutRef.get().then((doc) => {
         if (doc.exists) {
-          read = doc.data();
+          let read = doc.data();
           if ('field' in entry) {
-            let entryField = replaceUID(entry.field, uid);
+            const entryField = replaceUID(entry.field, uid);
             path = `${path}/${entryField}`;
             read = read[entryField];
           }
@@ -242,17 +242,17 @@ const firestoreTakeout = (uid) => {
 // Returns a Promise.
 const storageTakeout = (uid) => {
   const paths = userPrivacyPaths.storage.takeout;
-  let promises = [];
-  let takeout = {};
+  const promises = [];
+  const takeout = {};
 
   for (let i = 0; i < paths.length; i++) {
-    let entry = paths[i];
-    let entryBucket = replaceUID(entry[0], uid);
-    let path = replaceUID(entry[1], uid);
-    let sourceBucket = storage.bucket(entryBucket);
-    let sourceFile = sourceBucket.file(path);
+    const entry = paths[i];
+    const entryBucket = replaceUID(entry[0], uid);
+    const path = replaceUID(entry[1], uid);
+    const sourceBucket = storage.bucket(entryBucket);
+    const sourceFile = sourceBucket.file(path);
 
-    let destinationPath = `takeout/${uid}/${path}`;
+    const destinationPath = `takeout/${uid}/${path}`;
 
     let copyPromise = sourceFile.copy(destinationPath);
     // Make copyPromise succeed even if it fails:
