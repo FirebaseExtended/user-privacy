@@ -110,15 +110,15 @@ const firestoreWipeout = (uid) => {
     const entryDoc = replaceUID(entry.doc, uid);
     const docToDelete = firestore.collection(entryCollection).doc(entryDoc);
     if ('field' in entry) {
-      entryField = replaceUID(entry.field, uid);
-      promises.push(docToDelete.update({
-        entryField: FieldValue.delete(),
-      }).catch((error) => {
-        console.error('Error deleting field: ', error);
+      const entryField = replaceUID(entry.field, uid);
+      const update = {};
+      update[entryField] = FieldValue.delete();
+      primises.push(docToDelete.update(update).catch((err) => {
+        console.error('Error deleting field: ', err);
       }));
     } else if (docToDelete) {
-      promises.push(docToDelete.delete().catch((error) => {
-        console.error('Error deleting document: ', error);
+      promises.push(docToDelete.delete().catch((err) => {
+        console.error('Error deleting document: ', err);
       }));
     };
   };
@@ -174,7 +174,7 @@ const databaseTakeout = (uid) => {
   for (let i = 0; i < paths.length; i++) {
     const path = replaceUID(paths[i], uid);
     promises.push(db.ref(path).once('value').then((snapshot) => {
-      let read = snapshot.val();
+      const read = snapshot.val();
       if (read !== null) {
         takeout[snapshot.key] = read;
       }
@@ -203,23 +203,19 @@ const firestoreTakeout = (uid) => {
     const entryDoc = replaceUID(entry.doc, uid);
     const takeoutRef = firestore.collection(entryCollection).doc(entryDoc);
     const path = `${entryCollection}/${entryDoc}`;
-    promises.push(
-      takeoutRef.get().then((doc) => {
-        if (doc.exists) {
-          let read = doc.data();
-          if ('field' in entry) {
-            const entryField = replaceUID(entry.field, uid);
-            path = `${path}/${entryField}`;
-            read = read[entryField];
-          }
-          takeout[path] = read;
+    promises.push(takeoutRef.get().then((doc) => {
+      if (doc.exists) {
+        let read = doc.data();
+        if ('field' in entry) {
+          const entryField = replaceUID(entry.field, uid);
+          path = `${path}/${entryField}`;
+          read = read[entryField];
         }
-      }).catch((err) => {
-        console.error('Error encountered during firestore takeout: ', err);
-      }).then(new Promise((resolve, reject) => {
-        resolve(path);
-      }))
-    );
+        takeout[path] = read;
+      }
+    }).catch((err) => {
+      console.error('Error encountered during firestore takeout: ', err);
+    }));
   };
   return Promise.all(promises).then(() => takeout);
 };
