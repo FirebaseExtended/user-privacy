@@ -113,7 +113,7 @@ const firestoreWipeout = (uid) => {
       const entryField = replaceUID(entry.field, uid);
       const update = {};
       update[entryField] = FieldValue.delete();
-      primises.push(docToDelete.update(update).catch((err) => {
+      promises.push(docToDelete.update(update).catch((err) => {
         console.error('Error deleting field: ', err);
       }));
     } else if (docToDelete) {
