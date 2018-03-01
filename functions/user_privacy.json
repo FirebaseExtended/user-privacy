@@ -1,0 +1,33 @@
+{
+  "database": {
+    "wipeout": [
+      "/users/UID_VARIABLE",
+      "/admins/UID_VARIABLE"
+    ],
+    "takeout": [
+      "/users/UID_VARIABLE",
+      "/admins/UID_VARIABLE"
+    ]
+  },
+  "firestore": {
+    "wipeout": [
+      {"collection": "users", "doc": "UID_VARIABLE", "field": "name"},
+      {"collection": "users", "doc": "UID_VARIABLE"},
+      {"collection": "admins", "doc": "UID_VARIABLE"}
+    ],
+    "takeout": [
+      {"collection": "users", "doc": "UID_VARIABLE", "field": "name"},
+      {"collection": "users", "doc": "UID_VARIABLE"},
+      {"collection": "admins", "doc": "UID_VARIABLE"}
+    ]
+  },
+  "storage": {
+    "wipeout": [
+      ["wipeout-takeout.appspot.com", "UID_VARIABLE/sample_data.json"],
+      ["wipeout-takeout.appspot.com", "UID_VARIABLE"]
+    ],
+    "takeout": [
+      ["wipeout-takeout.appspot.com", "UID_VARIABLE/sample_data.json"]
+    ]
+  }
+}

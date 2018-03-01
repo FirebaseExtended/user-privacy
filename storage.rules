@@ -1,0 +1,17 @@
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /takeout {
+      // Only allow takeout access for the user who requested takeout
+      match /{uid} {
+        allow read, write: if request.auth.uid == uid
+      }
+      match /{uid}/{path=**} {
+        allow read, write: if request.auth.uid == uid
+      }
+  	}
+    // Other application rules
+    match /{uid}/{path=**} {
+      allow read, write: if request.auth.uid == uid
+    }
+  }
+}
