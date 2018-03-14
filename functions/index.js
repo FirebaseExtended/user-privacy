@@ -29,7 +29,7 @@ const FieldValue = admin.firestore.FieldValue;
 
 // App-specific default bucket for storage. Used to upload takeout json and in
 // sample json of wipeout and takeout paths.
-const appBucketName = 'wipeout-takeout.appspot.com';
+const appBucketName = userPrivacyPaths.primaryBucketName;
 
 // Wipeout
 //
