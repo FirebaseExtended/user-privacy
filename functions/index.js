@@ -29,7 +29,7 @@ const FieldValue = admin.firestore.FieldValue;
 
 // App-specific default bucket for storage. Used to upload takeout json and in
 // sample json of wipeout and takeout paths.
-const appBucketName = 'wipeout-takeout.appspot.com';
+const takeoutBucket = userPrivacyPaths.takeoutUploadBucket;
 
 // Wipeout
 //
@@ -256,7 +256,7 @@ const storageTakeout = (uid) => {
     );
     // Add the copy task to the array of Promises
     promises.push(copyPromise);
-    takeout[`${entryBucket}/${path}`] = `${appBucketName}/${destinationPath}`;
+    takeout[`${entryBucket}/${path}`] = `${takeoutBucket}/${destinationPath}`;
   }
   return Promise.all(promises).then(() => takeout);
 };
@@ -269,7 +269,7 @@ const storageTakeout = (uid) => {
 // Called by the top-level takeout function.
 const uploadToStorage = (uid, takeout) => {
   const json = JSON.stringify(takeout);
-  const bucket = storage.bucket(appBucketName);
+  const bucket = storage.bucket(takeoutBucket);
   const file = bucket.file(`takeout/${uid}/takeout.json`);
 
   return file.save(json);

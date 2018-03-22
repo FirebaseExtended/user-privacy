@@ -1,4 +1,5 @@
 {
+  "takeoutUploadBucket": "wipeout-takeout.appspot.com",
   "database": {
     "wipeout": [
       "/users/UID_VARIABLE",
