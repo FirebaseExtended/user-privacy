@@ -36,7 +36,8 @@ name of the form:
 The wipeout function as written is triggered when a user deletes their account
 using Firebase Auth, and it performs a wipeout from all three services.
 
-Steps to start using wipeout:
+**Steps to start using wipeout:**
+
 - [ ] Include the wipeout function and 3 supporting functions (and the requires
   and convenience variables) in `functions/index.js`
 - [ ] In `user_privacy.json`, add paths to personal information for all the
@@ -57,7 +58,7 @@ The takeout function is triggered via a HTTP request. The sample app in
 `/public` has a button that’s wired up to trigger takeout; in a more
 traditional app, this could be in settings.
 
-In order to start using it:
+**In order to start using it:**
 
 - [ ] Include the function and 4 supporting functions in `functions/index.js.`
 - [ ] In `user_privacy.json`, add:
@@ -91,7 +92,7 @@ access, another cannot restrict it.
 
 ### How to contribute to this repo
 
-- [ ] Clone this repository
+- [ ] Fork and clone this repository
 - [ ] Create a new firebase project and go through the `firebase init` flow.
 This project uses Hosting, Functions, the RealTime Database, Firestore, and
 Storage.
