@@ -7,15 +7,6 @@ and copying out data at when a user requests it (the [`takeout` function]()).
 The functions are  flexible and easy to change to fit the needs of your specific
 users and apps.
 
-### How to contribute
-
-- [ ] Clone this repository
-- [ ] Create a new firebase project and go through the `firebase init` flow.
-This project uses Hosting, Functions, the RealTime Database, Firestore, and
-Storage.
-- [ ] `cd` into the `functions` directory and `npm install`
-- [ ] Run `firebase deploy`
-
 
 ### How to use these functions in your own project
 
@@ -97,3 +88,14 @@ for the takeout folder to the Storage Rules.
 - [ ] Look through any preexisting Storage Rules; if a rule grants broader
 access to the takeout data, update that rule. Remember that if one rule grants
 access, another cannot restrict it.
+
+### How to contribute to this repo
+
+- [ ] Clone this repository
+- [ ] Create a new firebase project and go through the `firebase init` flow.
+This project uses Hosting, Functions, the RealTime Database, Firestore, and
+Storage.
+- [ ] `cd` into the `functions` directory and `npm install`
+- [ ] Run `firebase deploy`
+- [ ] Make the changes you're interested in
+- [ ] Submit a Pull Request explaining the problem and solution.
