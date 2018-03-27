@@ -10,7 +10,9 @@ users and apps.
 ### How to contribute
 
 - [ ] Clone this repository
-- [ ] Create a new firebase project and go through the `firebase init` flow. This project uses Hosting, Functions, the RealTime Database, Firestore, and Storage.
+- [ ] Create a new firebase project and go through the `firebase init` flow.
+This project uses Hosting, Functions, the RealTime Database, Firestore, and
+Storage.
 - [ ] `cd` into the `functions` directory and `npm install`
 - [ ] Run `firebase deploy`
 
@@ -20,40 +22,78 @@ users and apps.
 The `index.js` file has comments about how the functions work; this is about
 how to wire it up.
 
-The developer specifies the paths to data to wipeout or takeout. Those paths live in `user_privacy.json`. The data structures vary for each of the products:
-- For the RTDB, it’s a list of Strings to the path in the database of the form `"</users/uid/follows/..."`
-- For Firestore, it’s a list of Objects of the form `{ "collection": "admins",
-"doc": "UID_VARIABLE", "field": "email" }`.
-- For Storage, it’s a list of Lists with two elements, a bucket name and file name of the form `["cool-project.appspot.com", "users/uid/avatar.jpg"]`
+The developer specifies the paths to data to wipeout or takeout. Those paths
+live in `user_privacy.json`. The data structures vary for each of the products:
+* For the RTDB, it’s a list of Strings to the path in the database of the form
+`"/users/uid/follows/..."`
+* For Firestore, it’s a list of Objects of the form:
+```json
+{
+    "collection": "admins",
+    "doc": "UID_VARIABLE",
+    "field": "email"
+}
+```
+* For Storage, it’s a list of Lists with two elements, a bucket name and file
+name of the form:
+```json
+["cool-project.appspot.com", "users/uid/avatar.jpg"]
+```
 
 #### Wipeout function
+
 The wipeout function as written is triggered when a user deletes their account
-using firebase auth, and it performs a wipeout from all three services.
+using Firebase Auth, and it performs a wipeout from all three services.
 
 Steps to start using wipeout:
-- [ ] Include the wipeout function and 3 supporting functions (and the requires and convenience variables) in `functions/index.js`
-- [ ] In `user_privacy.json`, add paths to personal information for all the products you’re using.
-- [ ] Make sure you’ve added the ability for the user to delete their account, because that’s what triggers the function
-- [ ] If you’re not using all three products, RTDB, Firestore, and Storage, remove the parts of the function that you don’t need.
+- [ ] Include the wipeout function and 3 supporting functions (and the requires
+  and convenience variables) in `functions/index.js`
+- [ ] In `user_privacy.json`, add paths to personal information for all the
+  products you’re using.
+- [ ] Make sure you’ve added the ability for the user to delete their account,
+  because that’s what triggers the function
+- [ ] If you’re not using all three products, RTDB, Firestore, and Storage,
+  remove the parts of the function that you don’t need.
 
-As an FYI, the wipeout is implemented by collecting a promise for every deletion event that needs to occur. Only when all promises resolve is the wipeout considered complete. Keep that in mind if you send a confirmation message that wipeout has completed.
+The wipeout is implemented by collecting a promise for every
+deletion event that needs to occur. Only when all promises resolve is the
+wipeout considered complete. Keep that in mind if you send a confirmation
+message that wipeout has completed.
 
 #### Takeout function
-The takeout function is triggered via a HTTP request. (The sample app in
-  `/public` has a button that’s wired up to trigger takeout, but in a more
-  traditional app, that would be in settings.)
+
+The takeout function is triggered via a HTTP request. The sample app in
+`/public` has a button that’s wired up to trigger takeout; in a more
+traditional app, this could be in settings.
 
 In order to start using it:
 
 - [ ] Include the function and 4 supporting functions in `functions/index.js.`
 - [ ] In `user_privacy.json`, add:
-  - [ ] A ``"takeoutUploadBucket"`` key that maps to the name of your primary bucket (or in the case of the free tier, your only bucket).
-  - [ ] Paths to personal information for all the products you’re using.
-- [ ] Wire it up in a way appropriate for your platform. For web, I added a
-button in `public/index.html`, that triggers a POST request, and add a rewrite entry in `firebase.json` to trigger the function via HTTP.
+    - [ ] A ``"takeoutUploadBucket"`` key that maps to the name of your primary
+    bucket (or in the case of the free tier, your only bucket).
+    - [ ] Paths to personal information for all the products you’re using.
+- [ ] Trigger the function via HTTP request, in a way appropriate for your
+platform. In the sample web app, a button in `public/index.html` makes a POST
+request and a rewrite entry in `firebase.json` reroutes the request to the
+function.
 - [ ] If you’re not using all three products, RTDB, Firestore, and Storage,
 remove the parts of the function you don’t need.
 
-Takeout for Storage is weird because we copy the data to a folder for that user, and also create the json of references.
+For Realtime Database and Firestore we write the user data into a JSON
+document. For Storage we write a JSON document containing an index of stored
+files, and copy the files themselves into a folder.
 
-The storage.rules additions are extremely important for takeout. Without them, all the takeout data is freely available. We next the final takeout output under `/takeout`, but check to make sure you don’t have have wildcards in your storage rules, that will also apply to the takeout section.
+#### Takeout rules
+
+Adding Storage Rules to protect the takeout data is extremely important for
+takeout; without Rules, the takeout data is broadly available. The `takeout`
+function uploads to a top level `/takeout` folder, and the [Storage
+Rules](https://github.com/firebase/user-privacy/blob/master/storage.rules#L3-L10
+  ) restrict access to the specific user who requested takeout. To protect the
+takeout data:
+- [ ] Add the [Rules](https://github.com/firebase/user-privacy/blob/master/storage.rules#L3-L10)
+for the takeout folder to the Storage Rules.
+- [ ] Look through any preexisting Storage Rules; if a rule grants broader
+access to the takeout data, update that rule. Remember that if one rule grants
+access, another cannot restrict it.
