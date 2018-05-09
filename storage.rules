@@ -1,7 +1,7 @@
 service firebase.storage {
   match /b/{bucket}/o {
-    match /takeout {
-      // Only allow takeout access for the user who requested takeout
+    match /exportData {
+      // Only allow access to exported data by the user who requested an export
       match /{uid} {
         allow read, write: if request.auth.uid == uid
       }

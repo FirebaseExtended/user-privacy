@@ -99,7 +99,7 @@ var handleSignedInUser = function(user) {
   }
 
   // When a user signs in, save their user info to RTDB and Firestore,
-  // to demo wipeout and takeout functionality.
+  // to demo clearing and exporting data.
   var data = {
     name: user.displayName,
     email: user.email,
@@ -115,8 +115,8 @@ var handleSignedInUser = function(user) {
   firebase.firestore().collection('admins').doc(user.uid).set(data);
 };
 
-var uploadToStorage = function(uid, takeout) {
-  var json = JSON.stringify(takeout);
+var uploadToStorage = function(uid, data) {
+  var json = JSON.stringify(data);
   var bucket = storage.bucket(bucketName);
   var file = bucket.file(`${uid}.json`);
 
@@ -153,11 +153,11 @@ var deleteAccount = function(firebaseStorage) {
   });
 };
 
-var takeout = function() {
-  window.alert('Takeout has started and will be uploaded to storage.')
+var exportData = function() {
+  window.alert('Data export has started and will be uploaded to storage.')
   var xhr = new XMLHttpRequest();
   var body = firebase.auth().currentUser;
-  xhr.open('POST', '/takeout', true);
+  xhr.open('POST', '/export', true);
   xhr.send(
       JSON.stringify(body),
       function(er, res, body) {
@@ -182,9 +182,9 @@ var initApp = function() {
         deleteAccount();
       }
   );
-  document.getElementById('takeout').addEventListener(
+  document.getElementById('export-data').addEventListener(
       'click', function() {
-        takeout();
+        exportData();
       }
   );
 };
