@@ -2,8 +2,8 @@
 
 This is not an official Google product. This repo is an example of using Cloud
 Functions for Firebase to protect user privacy. Specifically, it demonstrates
-removing user data when they delete their account (the [`wipeout` function]())
-and copying out data at when a user requests it (the [`takeout` function]()).
+removing user data when they delete their account (the [`clearData` function]())
+and copying out data at when a user requests it (the [`exportData` function]()).
 The functions are  flexible and easy to change to fit the needs of your specific
 users and apps.
 
@@ -13,7 +13,7 @@ users and apps.
 The `index.js` file has comments about how the functions work; this is about
 how to wire it up.
 
-The developer specifies the paths to data to wipeout or takeout. Those paths
+The developer specifies the paths to data to clear or export. Those paths
 live in `user_privacy.json`. The data structures vary for each of the products:
 * For the RTDB, it’s a list of Strings to the path in the database of the form
 `"/users/uid/follows/..."`
@@ -31,15 +31,15 @@ name of the form:
 ["cool-project.appspot.com", "users/uid/avatar.jpg"]
 ```
 
-#### Wipeout function
+#### clearData function
 
-The wipeout function as written is triggered when a user deletes their account
-using Firebase Auth, and it performs a wipeout from all three services.
+The clearData function as written is triggered when a user deletes their account
+using Firebase Auth, and it performs a deletion from all three services.
 
-**Steps to start using wipeout:**
+**Steps to start using clearData:**
 
-- [ ] Include the wipeout function and 3 supporting functions (and the requires
-  and convenience variables) in `functions/index.js`
+- [ ] Include the clearData function and 3 supporting functions (and the
+  `require`s and convenience variables) in `functions/index.js`
 - [ ] In `user_privacy.json`, add paths to personal information for all the
   products you’re using.
 - [ ] Make sure you’ve added the ability for the user to delete their account,
@@ -47,22 +47,22 @@ using Firebase Auth, and it performs a wipeout from all three services.
 - [ ] If you’re not using all three products, RTDB, Firestore, and Storage,
   remove the parts of the function that you don’t need.
 
-The wipeout is implemented by collecting a promise for every
+Clearing the data is implemented by collecting a promise for every
 deletion event that needs to occur. Only when all promises resolve is the
-wipeout considered complete. Keep that in mind if you send a confirmation
-message that wipeout has completed.
+clear considered complete. Keep that in mind if you send a confirmation
+message that the data has been removed.
 
-#### Takeout function
+#### exportData function
 
-The takeout function is triggered via a HTTP request. The sample app in
-`/public` has a button that’s wired up to trigger takeout; in a more
+The exportData function is triggered via a HTTP request. The sample app in
+`/public` has a button that’s wired up to trigger a data export; in a
 traditional app, this could be in settings.
 
 **In order to start using it:**
 
 - [ ] Include the function and 4 supporting functions in `functions/index.js.`
 - [ ] In `user_privacy.json`, add:
-    - [ ] A ``"takeoutUploadBucket"`` key that maps to the name of your primary
+    - [ ] A ``"exportDataUploadBucket"`` key that maps to the name of your primary
     bucket (or in the case of the free tier, your only bucket).
     - [ ] Paths to personal information for all the products you’re using.
 - [ ] Trigger the function via HTTP request, in a way appropriate for your
@@ -76,18 +76,18 @@ For Realtime Database and Firestore we write the user data into a JSON
 document. For Storage we write a JSON document containing an index of stored
 files, and copy the files themselves into a folder.
 
-#### Takeout rules
+#### Security rules for exported data
 
-Adding Storage Rules to protect the takeout data is extremely important for
-takeout; without Rules, the takeout data is broadly available. The `takeout`
-function uploads to a top level `/takeout` folder, and the [Storage
+Adding Storage Rules to protect the exported data is extremely important;
+without Rules, the exported data could be broadly available. The `clearData`
+function uploads to a top level `/exportData` folder, and the [Storage
 Rules](https://github.com/firebase/user-privacy/blob/master/storage.rules#L3-L10
-  ) restrict access to the specific user who requested takeout. To protect the
-takeout data:
+  ) restrict access to the specific user who requested export. To protect the
+exported data:
 - [ ] Add the [Rules](https://github.com/firebase/user-privacy/blob/master/storage.rules#L3-L10)
-for the takeout folder to the Storage Rules.
+for the exportData folder to the Storage Rules.
 - [ ] Look through any preexisting Storage Rules; if a rule grants broader
-access to the takeout data, update that rule. Remember that if one rule grants
+access to the exported data, update that rule. Remember that if one rule grants
 access, another cannot restrict it.
 
 ### How to contribute to this repo
