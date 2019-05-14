@@ -2,7 +2,8 @@
 
 This is not an official Google product. This repo is an example of using Cloud
 Functions for Firebase to protect user privacy. Specifically, it demonstrates
-removing user data when they delete their account (the [`clearData` function]())
+removing user data from specific services (Realtime Database, Firestore, and 
+Storage) when they delete their account (the [`clearData` function]())
 and copying out data at when a user requests it (the [`exportData` function]()).
 The functions are  flexible and easy to change to fit the needs of your specific
 users and apps.
