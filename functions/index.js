@@ -36,8 +36,8 @@ const exportDataBucket = userPrivacyPaths.exportDataUploadBucket;
 // returns a success message.
 //
 // Triggered by a user deleting their account.
-exports.clearData = functions.auth.user().onDelete((event) => {
-  const uid = event.data.uid;
+exports.clearData = functions.auth.user().onDelete((user) => {
+  const uid = user.uid;
 
   const databasePromise = clearDatabaseData(uid);
   const storagePromise = clearStorageData(uid);
