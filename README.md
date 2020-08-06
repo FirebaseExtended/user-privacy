@@ -8,6 +8,11 @@ and copying out data at when a user requests it (the [`exportData` function]()).
 The functions are  flexible and easy to change to fit the needs of your specific
 users and apps.
 
+### Status
+
+![Status: Archived](https://img.shields.io/badge/Status-Archived-red)
+
+This sample is no longer actively maintained and is left here for reference only.
 
 ### How to use these functions in your own project
 
