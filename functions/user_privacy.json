@@ -13,6 +13,7 @@
   "firestore": {
     "clearData": [
       {"collection": "users", "doc": "UID_VARIABLE", "field": "name"},
+      {"collection": "users/UID_VARIABLE/likes"},
       {"collection": "users", "doc": "UID_VARIABLE"},
       {"collection": "admins", "doc": "UID_VARIABLE"}
     ],
