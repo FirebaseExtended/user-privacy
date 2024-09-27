@@ -36,8 +36,8 @@ const exportDataBucket = userPrivacyPaths.exportDataUploadBucket;
 // returns a success message.
 //
 // Triggered by a user deleting their account.
-exports.clearData = functions.auth.user().onDelete((event) => {
-  const uid = event.data.uid;
+exports.clearData = functions.auth.user().onDelete((user) => {
+  const uid = user.uid;
 
   const databasePromise = clearDatabaseData(uid);
   const storagePromise = clearStorageData(uid);
@@ -105,20 +105,37 @@ const clearFirestoreData = (uid) => {
   for (let i = 0; i < paths.length; i++) {
     const entry = paths[i];
     const entryCollection = replaceUID(entry.collection, uid);
-    const entryDoc = replaceUID(entry.doc, uid);
-    const docToDelete = firestore.collection(entryCollection).doc(entryDoc);
-    if ('field' in entry) {
-      const entryField = replaceUID(entry.field, uid);
-      const update = {};
-      update[entryField] = FieldValue.delete();
-      promises.push(docToDelete.update(update).catch((err) => {
-        console.error('Error deleting field: ', err);
-      }));
-    } else if (docToDelete) {
-      promises.push(docToDelete.delete().catch((err) => {
-        console.error('Error deleting document: ', err);
-      }));
-    };
+    if ('doc' in entry) {
+      const entryDoc = replaceUID(entry.doc, uid);
+      const docToDelete = firestore.collection(entryCollection).doc(entryDoc);
+      if ('field' in entry) {
+        const entryField = replaceUID(entry.field, uid);
+        const update = {};
+        update[entryField] = FieldValue.delete();
+        promises.push(docToDelete.update(update).catch((err) => {
+          console.error('Error deleting field: ', err);
+        }));
+      } else if (docToDelete) {
+        promises.push(docToDelete.delete().catch((err) => {
+          console.error('Error deleting document: ', err);
+        }));
+      };
+    } else {
+      promises.push(
+        firestore
+          .collection(entryCollection)
+          .get()
+          .then(querySnapshot => {
+            const deletionPromises = [];
+            querySnapshot.forEach(docSnapshot => {
+              deletionPromises.push(docSnapshot.ref.delete().catch((err) => {
+                console.error('Error deleting document: ', err);
+              }));
+            });
+            return Promise.all(deletionPromises);
+          })
+      );
+    }
   };
 
   return Promise.all(promises).then(() => uid);
