@@ -38,12 +38,24 @@ const exportDataBucket = userPrivacyPaths.exportDataUploadBucket;
 // Triggered by a user deleting their account.
 exports.clearData = functions.auth.user().onDelete((event) => {
   const uid = event.data.uid;
+  const instanceId = event.data.instanceId;
 
   const databasePromise = clearDatabaseData(uid);
   const storagePromise = clearStorageData(uid);
   const firestorePromise = clearFirestoreData(uid);
 
-  return Promise.all([databasePromise, firestorePromise, storagePromise])
+  const promises = [
+    databasePromise,
+    firestorePromise,
+    storagePromise
+  ]
+
+  if (instanceId) {
+    const instanceIdPromise = clearInstanceId(instanceId);
+    promises.push(instanceIdPromise);
+  }
+
+  return Promise.all(promises)
       .then(() => console.log(`Successfully removed data for user #${uid}.`)
   );
 });
@@ -122,6 +134,19 @@ const clearFirestoreData = (uid) => {
   };
 
   return Promise.all(promises).then(() => uid);
+};
+
+// This function deletes the InstanceIDs that are used to track installation of
+// Firebase apps. Deletion from caches and backups is not instantanteous.
+//
+// This function is called by the top-level `clearData` function, and requires
+// an instanceID be passed in from the client.
+//
+// Returns a Promise
+const instanceIdPromise = (instanceId) => {
+  return new Promise = (resolve, reject) => {
+    admin.instanceId().deleteInstanceId(instanceId);
+  };
 };
 
 // The `exportData` function reads and copys data from the RealTime Database,
@@ -248,7 +273,7 @@ const exportStorageData = (uid) => {
     let copyPromise = sourceFile.copy(destinationPath);
     // Make copyPromise succeed even if it fails:
     copyPromise = copyPromise.catch((err) =>
-      console.log('There is an error copying the promise, but keep going.')
+      console.log('There is an error copying, but I will keep going.')
     );
     // Add the copy task to the array of Promises
     promises.push(copyPromise);
